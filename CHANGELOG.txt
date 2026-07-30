@@ -1,0 +1,200 @@
+FaceForge 0.11.0 - 2026-07-30
+
+- Added the finished-preset check. A preset changes after FaceForge writes it: picking different eyes, hair, brows or a head mesh in RaceMenu rewrites the head-part list, so the dependency report generated at export time stops describing the file. Sharing that stale report hands the recipient a preset that silently falls back to defaults for every part they lack.
+- Loading a finished preset now recomputes its requirements from its own records: every head part resolved to a name, category, sex and valid races; every plugin those parts come from; whether each is installed here and which Vortex mod supplied it; slider count by family; sculpt hosts; tint layers; whether the vanilla CharGen base block is present; and a share-ready verdict with named blockers.
+- The inspected preset is also adopted as the export source, so the Preset Pack ships the recomputed requirements rather than the ones FaceForge guessed when it first wrote the file.
+- Fixed head parts from BSA-packed mods never resolving. The head-part index only parses plugins whose source mod deployed loose face assets, so a mod shipping its meshes inside a BSA contributed no records. Unresolved parts now trigger an on-demand parse of their own plugin.
+- Fixed ESL head parts never resolving. RaceMenu writes a light plugin's head part with the 0xFE load index still embedded in the identifier, so "AdvancedEyesAddon_CVEObyLDD.esp|4BED40" refers to the record the plugin itself calls 000D40. The low twelve bits are now masked out before matching, which is the same convention Follower Forge already uses.
+- Verified against the supplied edited Homelander.jslot: before these two fixes, two of seven head parts were unresolved; after them, all seven resolve by name, including the ESL eye record and the BSA-packed KS Hairdo. Requirements went from the two plugins FaceForge originally declared to the four the file actually needs, all present, each with its exact Vortex source mod.
+- Verified 42 frontend tests, 71 native assertions, browser QA across four source variants, clean .NET build, single-file gate, and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+
+FaceForge 0.10.0 - 2026-07-30
+
+- Diagnosed the "too defaulty" result against the supplied READ_ALL_SLIDERS_TEST.jslot, a preset saved with every slider in the user's RaceMenu touched. That install defines 206 sliders: EFM 83, CME 51, SPG 30, LDD 19, NSK 13, ECE 5, RANs 5. FaceForge wrote 35, all EFM. It was using 17 percent of the available slider surface, and only 35 of the 83 EFM sliders it already knew about.
+- Replaced the hardcoded 35-slider list with a slider catalog of 109 definitions: EFM 63, CME 21, SPG 17, NSK 8. Each definition names the measurement that drives it, its baseline, and its response weight.
+- Added a slider inventory. FaceForge cannot enumerate slider mods from disk because the names only exist inside RaceMenu at runtime, so it learns them by reading a preset saved from that install. Without one it writes the EFM family alone, which is the only family the plugin index can confirm.
+- Established per-family ranges from the five hand-authored reference presets: EFM runs to +/-3 (148 values), while CME, NSK, SPG and RANs run to about +/-1 (132 values, absolute maximum 1.31). A CME value written on the EFM scale would have been three times too strong.
+- The JSlot writer now clamps each family to its own range instead of clamping everything to the EFM range, and the slider controls use each slider's own limit.
+- Integer type selectors are never written. CME_NoseType, CME_EyesType, CME_LipType and ECE_EarShape carry indices that pick a numbered vanilla shape (26, 21, 24, 6 in the supplied preset); writing one as a morph value would silently swap the feature for whichever shape sits at that index.
+- Added nine measurements to support the new sliders: inner and outer eye corner width, upper and lower lid curve, canthal tilt, iris size, brow thickness, combined lip thickness, and lip separation.
+- Iris size is measured from the refined iris landmarks the model already returns (points 468-477), falling back to the baseline when a mesh arrives without refinement.
+- Depth and projection sliders are still not written. A single front photograph contains no depth information, so the fourteen EFM _Depth sliders stay out until a profile view is supported.
+- Tooth sliders are still not written, for the same reason: a closed-mouth portrait shows no teeth.
+- Likeness strength now defaults to full instead of 70 percent. On top of already conservative measurements it was shrinking every value by a further 30 percent.
+- Added a slider inventory panel showing the families found, how many sliders FaceForge writes against how many it can measure in that install, and how to produce the preset it reads.
+- Verified against the supplied install: output moved from 35 sliders to 108, across EFM, CME, NSK and SPG. No index selector was written, and SPG_ECEBrowThickness, which FaceForge defines but that install does not, was correctly dropped.
+- Verified 42 frontend tests, 58 native assertions, browser QA across four source variants including the live inventory stage, clean .NET build, single-file gate, and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+
+FaceForge 0.9.0 - 2026-07-30
+
+- Audited the 0.1.0-0.6.0 foundation. Environment discovery, Vortex manifest reading, CLI sandboxing, process quoting, and response validation were sound; three defects were found and fixed.
+- Fixed dropped vision context. The frontend sent sourceKind and hasLocalAnalysis with every vision request and the desktop bridge discarded both, so the model was always given the same prompt regardless of whether local landmarks had succeeded or whether the source was a photograph or an illustration.
+- Fixed disproportionate vision deltas. Refinement deltas were bounded at +/-3, which was a third of the old +/-10 slider range but is the entire +/-3 range introduced in 0.7.0, so a refinement could invert the local measurement outright. Refinement is now bounded at +/-1; interpreting from neutral, which has nothing to refine, keeps the full +/-3.
+- The prompt now states which job it is: small corrective deltas over a local estimate, or a full interpretation when landmarks failed. Photograph and illustration get different style instructions instead of one paragraph covering both.
+- Fixed refinement notes never reaching the warning list. The straightening note added in 0.8.0 was written into the correction record but not into the warnings the analysis panel renders, so the user was never told the image had been straightened.
+- Improved face scanning: the second detection pass now crops to the face as well as straightening it. The landmark model works from a fixed-size internal crop, so a face filling a small part of a wide shot was measured from far fewer pixels.
+- Measured on the QA portrait pasted into a frame three times larger: the reframed run lands within 0.063 worst case and 0.016 mean of the tightly framed run's sliders.
+- The combined crop-and-straighten pass also improved the tilt case: worst-case drift on a 16-degree tilt fell from 0.154 to 0.084 and the mean from 0.029 to 0.018.
+- Added a small-face stage to the browser QA that re-imports the portrait at a third of the frame width and asserts both that reframing occurred and that the sliders match.
+- Added 8 native assertions covering the vision context bounds, both prompt variants, the style instruction, the CLI prompt bound, the schema bound, and rejection of an out-of-range refinement delta.
+- Verified 39 frontend tests, 58 native assertions, live deployment indexing, rendered browser QA across three source variants, clean .NET build, single-file gate, and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+
+FaceForge 0.8.0 - 2026-07-30
+
+- Started a full-copy successor from the preserved FaceForge 0.7.0 release, excluding regenerated bin, obj, dist, node_modules, and artifacts.
+- Added source correction so imperfect photographs import properly instead of only raising a warning. Until now a tilted, turned, or expressive photo produced a warning and then wrote the contaminated numbers into the preset anyway.
+- Tilted sources are now straightened in the image itself and detected a second time. Landmark detection is not rotation invariant, so de-rotating only the landmarks left the model's own error in place; the second pass cut the worst-case slider drift on a 16-degree tilt from 0.581 to 0.154, and the mean from 0.088 to 0.029.
+- Any residual tilt is rotated out geometrically, which is exact.
+- Head turn and head nod are estimated from landmark depth and un-foreshortened by dividing out the cosine of each angle, up to 32 degrees.
+- Beyond 32 degrees the residual is not corrected. Width-driven or height-driven measurements instead lose confidence in proportion to the angle, so an unrecoverable pose fades those features to neutral rather than sculpting a distorted face.
+- Left/right differences are removed by mirror-averaging the landmark mesh. EFM sliders are bilateral, so a symmetric input is the only thing the output can represent and averaging both sides beats trusting the nearer one. The seventeen bilateral measurement landmarks are paired from a fixed table; contour points are paired by mutual nearest neighbour for the diagnostic mesh only.
+- Added expression handling for fourteen blendshape groups: open mouth, smile, stretched mouth, frown, pursed lips, compressed lips, raised lip, closed or narrowed eyes, widened eyes, moved brows, raised cheeks, wrinkled nose, shifted jaw, and tongue out.
+- Each rule fades only the measurements that expression physically moves, in proportion to its strength, with a dead zone for ordinary resting muscle tone. A full smile leaves mouth width at the neutral default instead of building a permanently grinning character.
+- Pose residual and expression contamination compound, so a turned head pulling a smile loses more trust than either alone.
+- Added a Source correction readout showing tilt, turn, nod, and the number of mirrored landmark pairs, plus a named list of any measurements left at neutral and why.
+- Sliders whose measurement was faded are flagged in the output panel: "neutral" when held entirely, or a percentage when partly trusted.
+- Retuned the eye and brow expression dead zones so a relaxed face no longer reports a 2 percent expression.
+- Added 13 source-correction regressions covering tilt recovery, turn recovery, turn direction, mirror-averaging, asymmetric brows, the unrecoverable-angle cutoff, open mouth, closed eyes, partial fading, slider flagging, a clean neutral source, and compounding.
+- Added a rotated-source stage to the browser QA that re-imports the same portrait tilted 16 degrees through the real landmark model and asserts the exported sliders land back on the straight run.
+- Verified 39 frontend tests, 50 native assertions, live deployment indexing, rendered browser QA, clean .NET build, single-file gate, and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+
+FaceForge 0.7.0 - 2026-07-30
+
+- Started a full-copy successor from the preserved FaceForge 0.6.0 release: 77 source/config files, 53.28 MB, excluding regenerated bin, obj, dist, node_modules, and artifacts.
+- Fixed the over-exaggerated in-game faces. EFM sliders are bounded at +/-3 in RaceMenu; 0.6.0 wrote values up to 8.5, with several sliders flat against its own +/-10 clamp.
+- Bounded generated and hand-edited values to +/-3 in the analyzer, the JSlot writer, and the slider controls, and replaced hard clamping with tanh compression so extreme measurements approach the limit instead of pinning at it.
+- Retuned the photo-deviation-to-EFM gain so an ordinary portrait lands in the 0.3-1.5 band that hand-authored presets occupy. Measured against five installed preset mods (Bella, Dua Lipa, Lulu, Maya, Natalya): 148 EFM entries, none outside +/-3.00, mean |value| 0.48-1.11.
+- Fixed EFM_Brow_Angle. The two brows were measured in opposite screen directions, so atan2 returned an angle near +/-180 degrees for the right brow and a flat brow was reported as roughly 87 degrees of tilt. That pinned EFM_Brow_Angle at maximum on every exported preset.
+- Replaced head-part name matching with the HDPT Type subrecord. Categories are now hair, brows, eyes, facial hair, scars, face, and misc; 3,481 of 3,629 installed records carry a Type and only 148 still fall back to their name.
+- Added gender gating from the HDPT Male/Female flags, and race gating by resolving each record's ValidRaces form list against the installed RACE records. Records with neither gender flag stay visible; an unresolvable ValidRaces list is reported as unknown, never as invalid.
+- Added a target race and sex selector built from the 10 playable RACE records parsed out of the installed base game, wired to the head-part lists and written into the export README and manifests.
+- Added base-game plugins to the head-part index, so vanilla hair, eyes, and brows are selectable without a mod supplying them.
+- Fixed the follower head export. The 0.6.0 manifest named Data/Meshes/CharGen/Exported and Data/Textures/CharGen/Exported, which neither RaceMenu writes nor Follower Forge reads, so the follower path could never complete.
+- Corrected the round trip to the evidenced paths: RaceMenu writes Data/SKSE/Plugins/CharGen/<name>.nif and .dds beside Presets/<name>.jslot, and Follower Forge enumerates NIF files in Data/SKSE/Plugins/CharGen.
+- Added a baked-head check that scans the indexed Data folder for that trio and adopts it as the Follower Head Kit source, closing the FaceForge -> RaceMenu -> Follower Forge loop.
+- Added a corepack fallback and pnpm shim to build.ps1 so the build gate runs without a global pnpm install.
+- Verified 25 frontend tests, 50 native assertions, live deployment indexing, rendered browser QA including exported slider magnitudes, clean .NET build, single-file gate, and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction/gameplay, and live provider calls remain user-side validation.
+
+FaceForge 0.6.0 - 2026-07-29
+
+- Started an exact full-copy successor from the preserved FaceForge 0.5.0 release: 878 files / 1,013,323,260 bytes.
+- Confirmed the supplied Lana workflow ZIP contained a JSlot but no NIF, DDS, or NPC plugin.
+- Replaced whole-mod appearance cards with 2,939 selectable exact deployed HDPT records in the current installation.
+- Added search and exact record details: name, EditorID, plugin/FormID, Vortex source mod, winning plugin, masters, and missing requirements.
+- Added one exact selection per brows/eyes/hair category and writes selected form identifiers plus dependencies into the generated JSlot.
+- Removed skin, body replacer, overlay, and unrelated follower packs from head-part selection.
+- Renamed the JSlot-only product to RaceMenu Head Export and added honest RaceMenu-to-Follower-Forge handoff instructions.
+- Verified 22 frontend tests, 37 native assertions, live deployment indexing, rendered UI interaction, clean .NET build, release-tree validation, and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, external NIF/DDS export, Follower Forge NPC construction/gameplay, and live provider calls remain user-side validation.
+
+FaceForge 0.5.0 - 2026-07-29
+
+- Started an exact full-copy successor from the preserved FaceForge 0.4.2 release: 874 files / 922,001,058 bytes excluding `node_modules`.
+- Added Quick Photo and Guided Multi-View capture without changing the existing single-photo analysis path.
+- Added front/left/right photo slots and a local 15-frame slow-turn video scanner that selects useful front and angle frames.
+- Added face count, pose, blur, exposure, contrast, crop, and expression checks with visible used/ignored status.
+- Added conservative fusion: the front view owns width-sensitive proportions while trustworthy angles corroborate vertical shape.
+- Added combined source confidence and automatic opposite-side relabeling for mirrored inputs.
+- Added three multi-view regressions for front-owned widths, outlier rejection, signed yaw, and video-frame selection.
+- Verified guided mode rejects frontal images placed in angle slots rather than distorting the 35-slider result.
+- Rebuilt, browser-tested, clean-launched, versioned, and hashed the one-file 0.5.0 standalone EXE.
+
+Runtime status: tool-validated; a real turn-video codec sample, RaceMenu likeness, external NIF/DDS export, follower construction/gameplay, and live provider calls remain user-side validation.
+
+FaceForge 0.4.2 - 2026-07-29
+
+- Started a byte-for-byte full-copy successor from FaceForge 0.4.1.
+- Reproduced the supplied portrait defect exactly: H/W 0.793, Face Height -7 at 70%, and the -10 clamp at 100%.
+- Fixed the source-image aspect error caused by mixing MediaPipe X and Y normalized units without width/height correction.
+- Applied the correction to every measured feature, angle, pose signal, symmetry score, race rank, EFM slider, and diagnostic point.
+- Reprojected the diagnostic mesh in face-local coordinates so portrait, square, and landscape frames render consistently.
+- Added regressions proving measurement and preview invariance across 1067x1600, 1:1, and 1920x1080 frames.
+- Verified the exact portrait now returns H/W 1.189, Face Height -2.36 at 70%, and approximately -3.37 at 100%.
+- Verified the exact Frieren image in Anime/Art mode now returns H/W 1.275 and Face Height -1.02 at 70%.
+- Rebuilt, browser-tested, clean-launched, versioned, and hashed the one-file 0.4.2 standalone EXE.
+
+Runtime status: tool-validated; RaceMenu likeness, external NIF/DDS export, follower construction/gameplay, and live provider calls remain user-side validation.
+
+FaceForge 0.4.1 - 2026-07-29
+
+- Started a full-copy successor from FaceForge 0.4.0 to repair the stylized-face height calibration reported with Frieren.
+- Reproduced the defect with the supplied anime reference: 1.619 interpreted face H/W and a raw-landmark preview that did not match the normalized slider input.
+- Confirmed the supplied follower is read-only FaceGen evidence (ESP, FaceGeom NIF, FaceTint DDS, and custom High Poly Head assets), not a reusable JSlot template.
+- Increased anatomy correction specifically for stylized face height while preserving jaw, eye, nose, mouth, and other identity measurements.
+- Made the diagnostic mesh and oval render the same interpreted face aspect used by race ranking and EFM sliders.
+- Added a Frieren-shaped 1.78+ raw-aspect regression that requires a 1.42-1.46 interpreted result and matching preview geometry.
+- Rebuilt, browser-tested, clean-launched, versioned, and hashed the one-file 0.4.1 standalone EXE.
+
+Runtime status: tool-validated; the supplied Frieren image now renders at 1.426 instead of 1.619. RaceMenu likeness and follower gameplay remain user-side validation.
+
+FaceForge 0.4.0 - 2026-07-29
+
+- Started a full-copy successor from FaceForge 0.3.0; 865 files copied, with only disposable broken pnpm links reporting copy warnings.
+- Added automatic Windows registry, Steam-library, Skyrim/Data/CharGen normalization, Vortex deployment, and startup indexing with manual fallback.
+- Added exact deployed brow, eye, hair, and skin recommendations with source-mod provenance, evidence paths, supplying plugins, direct plugin masters, missing-master status, and compatibility notes.
+- Added top-three EFM-supported race-foundation ranking from geometry only; skin color and real-world ethnicity are never analyzed.
+- Added Auto, Photo, and Anime/Art modes plus raster style assessment and realism normalization instead of raw symmetry copying.
+- Added consent-gated vision-only 35-slider fallback when the local landmark model cannot map a stylized face.
+- Added measured brow/eye visual targets while refusing to invent unparsed head-part FormIDs.
+- Validated the exact installed Vortex deployment and current brow recommendations read-only.
+- Rebuilt, browser-tested, clean-launched, versioned, and hashed the one-file 0.4.0 standalone EXE.
+
+Runtime status: tool-validated; actual likeness, RaceMenu/external export, follower construction/gameplay, and live provider calls remain user-side validation.
+
+FaceForge 0.3.0 - 2026-07-29
+
+- Made photo-first generation the default: a source JSlot is no longer required.
+- Added a fresh RaceMenu format-3 foundation that uses the active race/sex head-part defaults and applies generated custom morphs.
+- Kept existing JSlot selection as an optional inheritance path for hair, eyes, skin, tints, transforms, and sculpt.
+- Expanded local and provider refinement from 20 to 35 exact Expressive Facegen Morphs controls.
+- Added the New Follower Workflow package with an external-export job and exact JSlot/NIF/DDS handoff paths.
+- Added clear UI guidance that RaceMenu must materialize the topology-compatible NIF and FaceTint DDS before follower construction.
+- Rejected fake portrait-to-DDS conversion because format conversion alone cannot create a valid Skyrim head UV.
+- Rebuilt and validated the one-file standalone EXE, browser workflow, source contracts, native tests, and clean launch.
+
+Runtime status: tool-validated; actual portrait likeness, RaceMenu load/external export, NPC plugin construction, follower gameplay, and live provider calls still require user validation.
+
+FaceForge 0.2.1 - 2026-07-29
+
+- Started a full-copy successor from FaceForge 0.2.0 (1,193 copied files before disposable-cache cleanup).
+- Replaced the multi-file public bundle with one compressed, self-contained Windows EXE.
+- Added opt-in account-based vision connectors through the official Codex, Claude Code, and Gemini CLIs without reading or storing their login tokens.
+- Keeping OpenRouter API-key mode and local MediaPipe analysis as supported alternatives.
+- Correcting subscription copy: provider plan limits apply and API usage is billed separately.
+
+Runtime status: tool-validated; account-backed provider calls require user login and live validation, and Skyrim output still requires RaceMenu/follower gameplay validation.
+
+FaceForge 0.2.0 - 2026-07-29
+
+- Started a full-copy successor from the tool-validated 0.1.0 snapshot (4,302 copied files before disposable-cache cleanup).
+- Added requirements for exact Vortex deployment indexing, plugin-to-source-mod provenance, missing-dependency reporting, CharGen trio discovery, and archive-aware status.
+- Added separate RaceMenu Preset Pack and Follower Forge Head Kit output contracts.
+- Added opt-in OpenRouter vision refinement with session-only credentials, explicit photo-upload consent, strict structured output, and privacy-constrained routing.
+- Added a streaming native Vortex/CharGen index, exact plugin provenance, multi-sculpt parsing, deterministic ZIP packaging, and a Follower Forge handoff manifest.
+- Added frontend/native contract tests, real-deployment index validation, browser workflow QA, compact-layout screenshots, and a native launch check.
+- Added an obvious root-level READY TO USE folder, matching SHARE THIS ZIP, and START HERE instructions.
+- Preserved 0.1.0 as the rollback release; installed game, Vortex staging, CharGen, Follower Forge, Downloads examples, and reference roots remain read-only.
+
+Runtime status: tool-validated; generated output still requires user-side RaceMenu and follower gameplay validation.
+
+FaceForge 0.1.0 - 2026-07-29
+
+- Created the first authoritative FaceForge workspace.
+- Added on-device MediaPipe face landmark analysis for a single portrait.
+- Added editable photo-proportion to Expressive Facegen Morphs slider mapping.
+- Added format-3 RaceMenu .jslot template validation and non-destructive export.
+- Added an optional preserve/clear existing sculpt choice.
+- Added a local Windows WebView2 desktop host and offline model/wasm packaging.
+
+Runtime status: tool-validated only until a generated preset is loaded and checked in RaceMenu.
