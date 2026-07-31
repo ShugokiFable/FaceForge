@@ -1,3 +1,325 @@
+FaceForge 0.21.1 - 2026-07-31
+
+- Withdrew 0.21.0's camera-facing-half weighting. On the exact photograph it was written for -- a
+  26.8 degree turn -- it inflated every mirrored width instead of stabilising it: nose 0.226 ->
+  0.605, mouth 0.377 -> 0.729, inner-eye spacing 0.234 -> 0.495, jaw 0.830 -> 0.965. Face height
+  over width did not move, because the two face edges set it rather than a blended pair, which is
+  what pins the fault to the blend. Every race then fitted at 1% and Dark Elf came top.
+- The cause is not established, and that is the point. A 0.8/0.2 blend cannot inflate a pair by more
+  than the left-right disagreement itself, so something beyond the arithmetic was involved. Shipping
+  a second guess on top of the first would have been worse than reverting. The reasoning and the
+  measured failure are recorded in sourceCorrection.ts for whoever retries it.
+- The synthetic fixture passed the change. A turned-head correction has to be tested against a real
+  turned photograph; the fixture is symmetric by construction and cannot show this.
+- Kept from 0.21.0, both independently tested and unrelated to the blend: Elder dropped from the
+  offered races, and race ranking compared in measurement space so each race identifies its own
+  head.
+- Verified 61 frontend tests, 82 native assertions, clean builds, single-file gate, and an isolated
+  one-file launch.
+
+Runtime status: tool-validated. Measurements should return to their 0.20.0 values on a turned
+photograph; that is the thing to check first.
+Final EXE: FaceForge 0.21.1 - STANDALONE.exe 125926440 bytes
+SHA-256 2EA7660891E04AE71762539E9AF3FAE14B6E68A7FD6BD0B11FB2A9A44A1FA783
+
+FaceForge 0.21.0 - 2026-07-31
+
+- Dropped Elder from the offered races. ElderRace is the aged-human head Skyrim uses for old NPCs,
+  not a race anyone creates a character as, and the app's own card said "No matching installed RACE
+  record" while ranking it first for a young woman's photograph. Adding it in 0.20.0 was a
+  regression: the table had eight races before, and measuring the morph file made it easy to include
+  one nobody can select. A candidate the user cannot pick is not a recommendation.
+- Rebased the mean playable head on the eight offered races rather than nine, so the reference head
+  no longer averages in one nobody starts from. Under half a percent, but it was inconsistent with
+  the reason Elder was removed.
+- Rank races in measurement space instead of slider space. Going through the sliders puts every
+  comparison through per-slider sensitivities and a clamp, tuned for describing one face rather than
+  for telling near-identical heads apart -- and the measured morphs are near-identical. Under that
+  metric a race's own head did not reliably rank it: Imperial's head, close to the average, came
+  fourth. Mean relative distance per proportion is what "how far is this face from that head" means,
+  and it makes the identity case exact. All eight now identify themselves.
+- Weight the camera-facing half of a turned head instead of averaging both halves evenly. The
+  reported photograph was turned 26.8 degrees, paired only 155 points and disagreed left-to-right by
+  26%; its far half is foreshortened and partly hidden behind the nose and cheek, so a flat average
+  mixed guesses into the good half at full strength. The weight stays at one half below eight
+  degrees, where two good halves average better than one, and ramps to 0.85 by thirty. Which side
+  faces the camera is read from the mesh -- the near half's features sit further from the symmetry
+  axis -- not from a sign convention.
+- Verified 62 frontend tests (was 61), 82 native assertions, clean builds, single-file gate, and an
+  isolated one-file launch.
+
+Runtime status: tool-validated. The corrected ranking and the turned-head weighting have not yet
+been user-confirmed on the reported photograph.
+Final EXE: FaceForge 0.21.0 - STANDALONE.exe 125926442 bytes
+SHA-256 02E30044C653A87786E965BDB45328510D759022BE4A47C40FBF8555E6374840
+
+FaceForge 0.20.0 - 2026-07-31
+
+- Measured every playable race's real starting head, replacing the estimates the race table has
+  carried since 0.12.0. Skyrim's races share one head mesh; what makes a Nord head a Nord head is a
+  named morph in <sex>HeadRaces.tri -- BretonRace, NordRace, RedguardRace and the rest -- over the
+  same base vertices. Each was rendered with its own morph applied and measured by the pipeline that
+  reads a photograph. qa/render-head.py --races, qa/calibrate-races.mjs, qa/race-calibration.json.
+- The estimates were not merely imprecise. Redguard was described as "moderately broad nose
+  foundation" and given a +8% nose width; the real RedguardRace morph is 3% NARROWER than the
+  playable average, and its face is 3.6% shorter. Orc was given +25% chin width and +20% nose width
+  against real values of +3.8% and +0.4%. Those figures came from real-world racial stereotype
+  rather than from the game, and they are why a user's photograph of a white European woman was
+  ranked Redguard first at 92%. The game states what these heads are; there was never a reason to
+  guess. Reported by the user, twice, and correctly.
+- The real morphs are far subtler than the estimates implied: all nine sit within about 5% of each
+  other. The ranking therefore reports many near-ties, which 0.19.1 already labels. That is the
+  honest answer rather than a failure to discriminate.
+- Every race now defines the same 24 measurements, so the cross-race comparability fix from 0.19.1
+  operates on a broad common set instead of the three proportions the old estimates happened to
+  share.
+- Race descriptions are now derived from the measurement rather than written by hand. "Strong cheek
+  and jaw geometry" is replaced by, for Redguard, "longer face 3.6% below the playable average,
+  wider nose 3.1% below". Nothing in the shipped text describes a race in language borrowed from
+  real-world ethnicity.
+- Rebased the universal baselines onto the mean playable head. 0.19.0 measured the CharGen mesh with
+  no race morph applied -- a head no player ever sees, since every character carries one. Measuring
+  the race heads exposed the offset: the average real head is 5.4% longer in the face, 7.2% wider in
+  the chin and 3.5% wider in the nose than the bare mesh. faceAspect moves 1.0811 -> 1.1390.
+- Added the check the fabricated table could never have passed: each race's own head is fed back in
+  and the ranking must name that race. All nine pass. The neutral-head regression now uses the mean
+  playable head instead of the un-morphed mesh, for the same reason the baselines moved.
+- Indicative re-rank of the reported photograph, over the five proportions its screenshot showed:
+  Nord, Breton, Imperial, Orc, with Redguard fifth. Full confirmation needs the photo re-run.
+- Verified 61 frontend tests (was 60), 82 native assertions, clean builds, single-file gate, and an
+  isolated one-file launch.
+
+Runtime status: tool-validated. The corrected race ranking has not yet been user-confirmed on the
+reported photograph.
+Final EXE: FaceForge 0.20.0 - STANDALONE.exe 125926429 bytes
+SHA-256 EC917EF78DB12DC126E9D58218C215250760BAFB7B4BC418319A067B10D47519
+
+FaceForge 0.19.1 - 2026-07-31
+
+- Fixed the race ranking. Reported from a real run: a young woman's photo ranked Redguard joint-top
+  at 88%, alongside Imperial. The app does not and cannot infer ethnicity -- it never reads skin or
+  ancestry -- but the ranking it does perform was not sound.
+- Root cause: each race was averaged over its OWN four or five estimated proportions, and those
+  averages were then sorted against each other. The eight races do not define the same set.
+  Redguard is the only one estimating cheekWidth beside noseWidth; the elves swap in cheekHeight;
+  the rest use eyeWidth. Only faceAspect, jawWidth and chinWidth are common to all. Every candidate
+  was being graded on a different exam, so a face near Redguard's cheek estimate won on a dimension
+  no rival was tested on.
+- Ranking now runs over the three proportions every race estimates. Thinner, but comparable, which
+  is the property a ranking actually needs. The per-race extras still serve as baselines when
+  generating sliders, where they describe one race's head and stand on their own.
+- Near-ties now say so. 0.19.0 measured the baselines and shrank every slider about sixfold, which
+  squeezed the old `99 - effort * 45` score into a narrow band at the top -- unrelated races came out
+  88, 88 and 83, presenting close to a coin toss as a confident percentage. Candidates within 0.05
+  mean slider units of the best, under 2% of the EFM range and nothing visible in game, are now
+  labelled as measuring the same rather than implied to be ordered.
+- Not addressed here, and worth stating plainly: Skyrim's race names carry real-world coding, so a
+  geometry-only ranking that prints confident percentages beside them will read as an ethnicity
+  claim however the code actually works. The tie labelling reduces that; presenting shape matches
+  without a leaderboard would end it.
+- Verified 60 frontend tests (was 59), 82 native assertions, clean builds, single-file gate, and an
+  isolated one-file launch.
+
+Runtime status: tool-validated. 0.19.0's slider output was user-confirmed in RaceMenu as a good
+likeness on a male portrait; the race ranking on a second, heavily turned portrait is what this
+release fixes.
+Final EXE: FaceForge 0.19.1 - STANDALONE.exe 125922328 bytes
+SHA-256 2CD779D6E2BA1ECF6137479B2B1606033D74F6B24B28D004FA959C41A4B0EFFE
+
+FaceForge 0.19.0 - 2026-07-31
+
+- Added `TriFile`, a reader for the FaceGen `.tri` format (magic `FRTRI003`). FaceForge had never
+  opened a mesh file; it reasoned about faces in 2D and estimated what each slider does. The
+  geometry was on disk the whole time.
+- This removes the blocker the roadmap put in front of sculpting. Sculpt deltas index the vertex
+  array of a CharGen `.tri`, and that array -- the base head -- is inside the same file the preset
+  already names as its sculpt host. Reading the head NIF, listed as blocker 1, is not required.
+- Layout, verified byte-exactly: 64-byte header, then vertices (`numVerts*3` float32), triangles,
+  UVs and per-triangle UV indices when the flag bit is set, then `numMorphs` records of
+  `{uint32 nameLength; char name[]; float32 multiplier; int16 delta[numVerts*3]}`.
+- `nameLength` counts the trailing NUL. Assuming it does not leaves one byte per morph in the
+  stream, which does not fail -- it shifts every delta after the first morph into garbage. The
+  size equation caught it before a line of parser was written: the vanilla and High Poly Head
+  chargen heads both leave 1,240 bytes for 122 morph names whose text sums to 1,118.
+- `TrailingBytes` makes a drifted parse loud. The blocks carry no length prefixes, so one wrong
+  stride silently returns the wrong geometry; requiring the file to be consumed exactly is what
+  turns that into a visible failure.
+- Verified against five real installed files, all consumed exactly: vanilla `FemaleHeadChargen.tri`
+  996 v / 122 morphs, `KL\High Poly Head\FemaleHeadChargen.tri` 3832 v / 122, `EyesFemaleChargen.tri`
+  176 v / 35, `MouthHumanFChargen.tri` 141 v / 34, and EFM's `FemaleHead.tri` 996 v / 134.
+  996 and 3832 are exactly the sculpt host vertex counts the reference presets declare.
+- First measurements, replacing estimates. Base head extent (x, y, z) in mesh units: vanilla
+  12.644 / 16.269 / 21.829, High Poly Head 12.377 / 15.985 / 21.756 -- within 2%, so HPH is a
+  topology refinement rather than a differently proportioned head. EFM morph displacement at
+  weight 1 spans 0.515 (`EFM_Chin_Up`) down to 0.0067 (`EFM_Eyes_Inner_Thin`); `EFM_Nose_Wide` is
+  0.133, so the full +3 slider moves the nose about 3% of head width.
+- Added `--tri <path>` to the Core test harness: vertex/triangle/morph counts, trailing bytes, base
+  mesh extent, and every morph's displacement at weight 1. This is the measuring instrument the
+  next step uses to replace the estimated baselines and response weights in `sliderCatalog.ts`.
+- Found and not yet resolved: the only EFM head morph file on this installation is 996-vertex
+  vanilla topology, and its base mesh extent matches the vanilla head exactly. No 3832-vertex
+  High Poly Head EFM morph file is present, and the HPH chargen TRI carries only the 122 vanilla
+  morphs. Whether EFM sliders move an HPH head here is unverified and bears on the 0.15.0-0.18.0
+  HPH work.
+- Measured the neutral head, replacing 32 of the 39 estimated `measurementBaselines`. A slider is
+  the deviation of a face from the head it starts on, so an error in that reference is a constant
+  bias on every export -- present even for a face that needs no correction at all. The old numbers
+  were estimates carried since 0.6.0.
+- The method is deliberately not "measure the mesh". A front render of each CharGen head at
+  all-zero sliders is fed through the same detector and the same measurement code that reads a
+  photograph, so both sides of the comparison come from identical arithmetic and any bias in that
+  arithmetic cancels instead of accumulating. `qa/render-head.py` renders, `qa/calibrate-baselines.mjs`
+  measures, `qa/baseline-calibration.json` records every number including the rejected ones.
+- Four heads: vanilla and High Poly Head, female and male. Largest corrections: `noseBridgeWidth`
+  0.24 -> 0.078, `eyeInnerCorner` 0.055 -> 0.011, `noseTipWidth` 0.16 -> 0.078, `eyeInnerHeight`
+  0.22 -> 0.057, `lipFullness` 0.058 -> 0.116, `chinWidth` 0.24 -> 0.178, `faceAspect` 1.34 -> 1.081.
+- Effect, on the one face whose right answer is known -- the neutral head itself, which must export
+  nothing. Against the 0.18.0 baselines it exported 107 non-zero sliders, mean 0.99, ninetieth
+  percentile 2.14, several pinned at the +3 limit. Against the measured baselines, over the sliders
+  driven by a calibrated measurement, mean 0.14 and maximum 0.73, nothing pinned. Same defect class
+  0.18.0 fixed for the HPH factors, except it was in the baseline table all along.
+- Three things the render could not be trusted to answer, kept estimated and marked in source.
+  Skyrim's eyebrows are a texture on a plain forehead slab and the iris is a texture on a plain
+  sphere, so a render has neither; the detector still returns brow and iris landmarks at full
+  confidence, placed on the brow ridge and the eyeball, measuring something real that is not what
+  the photograph side measures. `lipGap` is near zero on a closed mouth and the four heads disagreed
+  by 175% of the mean. `eyeTilt` is zero by definition.
+- Two render details that changed the numbers rather than the picture. A bare head has no eyeballs,
+  so the lids read as closed and the pipeline faded every eye measurement toward the baseline being
+  calibrated -- circular. Compositing the eye mesh and drawing the iris the eye texture would draw
+  cleared it. And a front orthographic render is not automatically a zero-nod face: the pipeline read
+  5-13 degrees of nod on these meshes and un-foreshortened heights by up to 2.5%, a correction it
+  would not apply to a photograph of someone facing the camera, so each head is pitched until the
+  reported nod falls under a degree.
+- Contaminated readings are recovered, not discarded. A distrusted measurement is reported as
+  `baseline + (measured - baseline) * trust`, which is exactly invertible, so the eye family still
+  yields the number the detector saw. Re-running the calibration against a build already carrying the
+  calibrated values reproduces all 32 to the last digit, which is what says the recovery is a real
+  measurement and not a fixed point of the fade. Two consecutive runs also agree exactly.
+- Converted the per-race baselines from absolute proportions to multipliers of the universal table.
+  They were absolute, on the old scale, and would have gone on overriding the measured baselines with
+  1.34-era numbers -- so after this change, choosing a race would have been worse than choosing none.
+  The conversion divides each old target by the old universal baseline, so the relative spread is
+  unchanged. Imperial came out at 1.0 across the board: it had been the universal baseline all along.
+- Removed the dead `baseline` field duplicated on all 109 slider definitions. It mirrored the old
+  universal table, was unreachable behind a `??` that could never fire, and now contradicted the
+  calibrated values it appeared to state.
+- Added the regression that the existing neutral-face invariant could not catch: that test builds its
+  face out of the baselines, so it passes on any table, right or wrong. The new one uses what the
+  detector measured on the real neutral vanilla female head.
+- Fixed the shipped version strings. The EXE had been stamped 0.6.0 since 0.6.0, so every release
+  from 0.7.0 to 0.18.0 reports the wrong file and product version in Windows. Now 0.19.0.0.
+- Verified 59 frontend tests (was 58), 82 native assertions (was 71), clean .NET build across Core,
+  Tests and Desktop, clean frontend build, single-file publish gate, and an isolated one-file launch
+  from a clean folder (window titled FaceForge, stopped cleanly).
+
+Runtime status: tool-validated. In-game likeness against the recalibrated baselines is user-side.
+Final EXE: FaceForge 0.19.0 - STANDALONE.exe 125922344 bytes
+SHA-256 FFBFCD7C8A88F9AB98BE449199C6584152CE9C352E9ED610FA8483A40810214F
+
+FaceForge 0.18.0 - 2026-07-31
+
+- Fixed the estimation regression introduced in 0.16.0/0.17.0. A face whose measurements already equal the reference head has no deviation to encode and must export zeros; it did not. On the High Poly Head path a perfectly neutral face exported 27 non-zero sliders peaking at 0.55, and 34 peaking at 1.53 once race, sex and style stacked. Every real face carried that bias on top of its actual deviation.
+- Root cause: baseline multipliers were being used as a strength knob. The 0.16.0 comment stated it outright -- "Factor < 1.0 lowers baseline -> stronger slider for the same measurement". A baseline states what the reference head measures; a gain states how hard FaceForge pushes. Conflating them injects a constant offset into every measurement.
+- Withdrew HPH_BASELINE_FACTORS (now empty) and reverted HPH_RESPONSE_GAIN to the 0.18 value established in 0.7.0 against the hand-authored preset distribution.
+- The reasoning behind the raise does not survive checking. Vertex density does not change morph semantics: an EFM slider's effect is defined by the TRI morph it drives, and High Poly Head ships its own EFM-compatible morphs. Nothing measured shows a given EFM value moving an HPH head less than a vanilla one; the claim was inferred from author output. And author values are not photo measurements -- hand-authored presets sit high in the band because authors stylize deliberately, so matching their mean by raising gain reproduces authorial exaggeration rather than measuring a face.
+- Kept the parts of 0.15.0-0.17.0 that are evidenced: High Poly Head detection and auto-selection of the best HPH head for the active race/sex, the head mesh as a first-class appearance tab, and the empty HPH sculpt host shells (D-004, no invented vertex deltas).
+- Kept the opt-in sex and shape-style nudges. They have the same shape as the withdrawn factors but are off by default and explicitly chosen, so they are a stated preference rather than a hidden rescale of everyone's export.
+- Added the invariant test that would have caught this: a neutral face exports zeros on every automatic path, and selecting a head mesh does not change any slider value.
+- Race recommendation now ranks by the correction each race actually needs, running the real generator against every candidate and measuring the result over the proportions that race defines. The previous ranking scored an abstract distance with tolerance constants unrelated to the exported values, so a race could be recommended and then produce large corrections. Recommendation and output can no longer disagree.
+- Verified: neutral face 0 non-zero on both vanilla and HPH paths; synthetic face returns to mean 0.536 / p90 1.23 / max 2.65, inside the hand-authored band (mean 0.48-1.11, p90 1.4-2.3, max 3.00); HPH and vanilla outputs now identical.
+- Verified 58 frontend tests, 71 native assertions, clean package.
+
+Runtime status: tool-validated; RaceMenu visual likeness remains user-side.
+Final EXE: FaceForge 0.18.0 - STANDALONE.exe 125917478 bytes
+SHA-256 2B75BD20E03C8AA4302F31183A1BE8209B941A64C07B041F6D4F569D645154EA
+
+﻿FaceForge 0.17.0 - 2026-07-31
+
+- Re-mined MEMORY + YUYOU HPH jslots with the real RaceMenu shape (morphs.custom /
+  morphs.sculpt). Tightened HPH EFM response (gain 0.23 -> 0.24) and expanded midface /
+  brow / lid baseline factors from consensus means (Brow_Height, Chin_Width, Cheek_Height,
+  Chin_Height, lids) while keeping photo geometry authoritative.
+- Female HPH sculpt host shell now declares three evidenced empty hosts (D-004, no vertex
+  deltas): FemaleHeadCharGen.tri (3832), FemaleHeadBrowsCharGen.tri (371), and vanilla
+  EyesFemaleChargen.tri (176). Male still declares the parallel MaleHeadCharGen host only.
+- MouthHumanFChargen is intentionally not defaulted (only 2/6 presets). Hitomi remains
+  UBE-only and unmapped. F5/F9 warp / real sculpt deltas still future.
+- Codebase graph reindexed headlessly as FaceForge-0.17 (fast mode).
+- Verified 55 frontend tests, 71 native assertions, clean package.
+
+Runtime status: tool-validated; RaceMenu visual likeness remains user-side.
+Final EXE: FaceForge 0.17.0 - STANDALONE.exe 125911014 bytes
+SHA-256 D5F3D8C8B244BB2AEDCBA9AC9B29E0EF7546D26E95311248D3D5710D090548A5
+
+FaceForge 0.16.0 - 2026-07-31
+
+- First-class High Poly Head calibration: stronger EFM response gain (0.18 -> 0.23),
+  midface baseline factors when the selected face mesh is HPH, and empty HPH sculpt host
+  TRI declaration (FemaleHead + brows) so RaceMenu targets HPH topology without inventing
+  vertex deltas (D-004).
+- Wired App export/regen through highPolyHeadActive; analysis notes explain HPH path.
+- Verified 55 frontend tests, 71 native assertions, clean package.
+
+Runtime status: tool-validated.
+Final EXE: FaceForge 0.16.0 - STANDALONE.exe 125913386 bytes
+SHA-256 705D4E26C1B4B7468619ECF227E34A2E81858896A3D04CDFA66BF8C195DAE7D5
+FaceForge 0.15.0 - 2026-07-31
+
+- Explains and acts on the install index for High Poly Head: when HPH face meshes are present,
+  FaceForge auto-selects the best HPH head for the active race/sex on photo-built presets.
+- Head mesh is now a first-class appearance tab (was brows/eyes/hair/scars only). HPH entries are
+  sorted and labelled at the top; manual picks still override auto-prefer.
+- HPH-linked brow packs are preferred the same way when they fit race/sex.
+- Index notice reports whether High Poly Head was detected after environment scan.
+- Verified 52 frontend tests, 71 native assertions, clean package.
+
+Runtime status: tool-validated.
+FaceForge 0.14.0 - 2026-07-31
+
+- Added an optional Geometry style bridge (not ethnicity detection). After analysis, FaceForge can
+  score a "Compact soft midface" silhouette from measurements only and let the user apply it.
+- Applying the style lightly nudges baselines (narrower cheeks/bridge, softer jaw, slightly larger
+  eyes, ~3-6%) and can pre-select a preferred Skyrim foundation (Breton → Wood Elf → Imperial).
+- Guided by transferable EFM axes from the user-supplied YUYOU PRESET 2 jslot. Hitomi's UBE-only
+  morph set and heavy sculpt/NIF overlays are documented as non-transferable and not mapped.
+- Default remains photo-only. Skin color and real-world ethnicity are still never analyzed.
+- Verified 49 frontend tests, 71 native assertions, clean package.
+
+Runtime status: tool-validated; RaceMenu likeness remains user-side.
+FaceForge 0.13.0 - 2026-07-30
+
+- Added an optional Sex proportion touch-up toggle under Target race and sex. Off by default so
+  the photograph stays authoritative; when on, slider baselines get a light male/female nudge
+  (~2-4%): male a bit more jaw/chin/brow and slightly firmer eyes/lips, female a softer jaw and
+  a touch more eye/lip. Never rewrites the photo — only the race-relative baseline offsets.
+- Changing sex or the toggle rebuilds sliders from the existing analysis without re-detecting.
+- Verified 48 frontend tests (was 47), 71 native assertions, clean build, single-file publish.
+
+Runtime status: tool-validated; RaceMenu visual compatibility and in-game likeness remain user-side.
+FaceForge 0.12.0 - 2026-07-30
+
+- Hardened face detection so ordinary hard photos stop failing outright. Detection now escalates
+  through a ladder: default confidence, auto-levelled exposure, 90/180 degree rotations, then the
+  same steps at a reduced confidence threshold. A clean portrait still costs one detection.
+- Multi-face photos no longer error. The largest, most central face is chosen, and the analysis
+  panel notes how many candidates were present. Turn-video frame sampling uses the same recovery
+  path instead of discarding every imperfect frame.
+- Slider generation is now race-relative. Each playable race already had estimated default head
+  proportions used only for ranking; those targets now become the measurement baselines once a
+  race is selected, so exported values are offsets from that race's starting head rather than from
+  one universal average. Changing the target race rebuilds sliders from the existing analysis
+  without re-running detection.
+- UI copy updated so race selection is documented as both a head-part filter and a baseline for
+  slider offsets. Honest limitation remains: per-race numbers are still estimates until CharGen
+  head meshes can be measured directly.
+- Added unit coverage for primary-face selection and race-baseline slider shifts (47 frontend
+  tests, was 42). Native assertions unchanged at 71.
+- Verified clean frontend build, .NET build (0 warnings / 0 errors), single-file publish gate,
+  and isolated one-file launch.
+
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head
+bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
 FaceForge 0.11.0 - 2026-07-30
 
 - Added the finished-preset check. A preset changes after FaceForge writes it: picking different eyes, hair, brows or a head mesh in RaceMenu rewrites the head-part list, so the dependency report generated at export time stops describing the file. Sharing that stale report hands the recipient a preset that silently falls back to defaults for every part they lack.
@@ -198,3 +520,8 @@ FaceForge 0.1.0 - 2026-07-29
 - Added a local Windows WebView2 desktop host and offline model/wasm packaging.
 
 Runtime status: tool-validated only until a generated preset is loaded and checked in RaceMenu.
+
+
+
+
+

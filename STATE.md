@@ -1,88 +1,96 @@
 # FaceForge state
 
-- Workspace: `Z:\Backup\!Skyrim AE\!!!SkyrimAEaiWorkspace\FaceForge`
-- Parent version: `FaceForge 0.10.0`
-- Active version: `FaceForge 0.11.0`
-- Snapshot gate: 80 source/config files copied from 0.9.0. Regenerated trees (`bin`, `obj`,
-  `dist`, `node_modules`, `artifacts`) are deliberately not copied forward and are rebuilt by
-  `build.ps1` / `package.ps1`; prior release artifacts stay preserved in their own version roots.
-- Authority:
-  - FaceForge 0.10.0 remains the preserved rollback release.
-  - FaceForge 0.11.0 is the only active writable snapshot.
-  - Skyrim Data, Vortex staging, CharGen, installed tools, supplied downloads, and reference
-    vaults remained read-only.
-- Implemented in 0.11.0:
-  - finished-preset check that recomputes a preset's requirements from its own records rather
-    than from the export-time report, and adopts it as the export source;
-  - on-demand parsing of a head part's own plugin, so BSA-packed mods resolve;
-  - ESL head-part identifiers masked to their real local FormID before matching.
-- Implemented in 0.10.0:
-  - slider catalog of 109 definitions (EFM 63, CME 21, SPG 17, NSK 8) replacing the hardcoded 35;
-  - slider inventory learned from a preset saved on the user's own install, because slider names
-    exist only inside RaceMenu at runtime; without one, the EFM family alone is written;
-  - per-family ranges measured from the reference presets: EFM +/-3, CME/NSK/SPG/RANs +/-1;
-  - integer type selectors (CME_NoseType and friends) never written as morph values;
-  - nine new measurements: inner/outer eye corner width, upper/lower lid curve, canthal tilt,
-    iris size (from the model's refined iris landmarks), brow thickness, lip fullness, lip gap;
-  - likeness strength defaults to full instead of 70%.
-- Implemented in 0.9.0:
-  - audit of the 0.1.0-0.6.0 foundation; discovery, manifest reading, CLI sandboxing, process
-    quoting, and response validation were sound, three defects were found and fixed;
-  - vision requests now carry `sourceKind` and `hasLocalAnalysis`, which the desktop bridge had
-    been discarding, and the prompt states which job it is doing;
-  - vision refinement deltas bounded at +/-1 instead of +/-3, since +/-3 is now the entire slider
-    range; interpretation from neutral keeps the full range;
-  - refinement notes now reach the warning list, not only the correction record;
-  - the second detection pass crops to the face as well as straightening it, recovering landmark
-    precision on a face that fills only part of the frame.
-- Carried from 0.8.0:
-  - two-pass detection that straightens a tilted image before landmarking, then rotates out the
-    residual tilt geometrically;
-  - turn and nod estimated from landmark depth and un-foreshortened up to 32°, past which the
-    affected measurements lose confidence instead of being scaled further;
-  - mirror-averaging of the landmark mesh, with a fixed table for the seventeen bilateral
-    measurement landmarks and mutual-nearest matching for cosmetic contour points;
-  - fourteen expression rules that fade only the measurements each expression physically moves,
-    compounding with the pose residual;
-  - a Source correction readout, a named list of measurements held at neutral, and per-slider
-    "neutral" / percentage flags in the output panel.
-- Carried from 0.7.0: EFM range ±3 with tanh compression, the brow-angle fix, HDPT-record head-part
-  gating by Type/Flags/ValidRaces, the installed-RACE target selector, and the corrected
-  RaceMenu → Follower Forge round trip.
-- Source/config diff against 0.10.0: 1 file added (`PresetInspector.cs`), 0 removed, 9 changed.
-- Rollback artifacts preserved in each version root, most recently
-  `FaceForge 0.10.0\artifacts\FaceForge 0.10.0 - STANDALONE.exe` (125,857,575 bytes).
-- Automated validation:
-  - frontend: 4 files / 42 tests;
-  - native: 71 assertions;
-  - live deployed index (unchanged from 0.7.0): 3,629 head-part records, 3,481 typed from the
-    record, 3,000 with a resolved `ValidRaces` list, 10 playable races;
-  - browser QA on a real portrait: max |EFM| 1.750, mean 0.632, 0 sliders at the limit, tilt
-    −0.2° / turn 1.5° / nod 3.6° on a clean source, nothing held at neutral, no console or page
-    errors;
-  - browser QA rotated-source stage: the same portrait re-imported at a 16° tilt reports 15.7°
-    and lands within 0.084 worst case and 0.018 mean of the straight run's sliders (0.154 in
-    0.8.0 with straightening only; 0.581 with neither);
-  - browser QA small-face stage: the portrait pasted into a frame 3x larger reframes and lands
-    within 0.063 worst case and 0.016 mean of the tightly framed run;
-  - control: re-encoding the portrait through the same canvas at 0° produces exactly zero slider
-    drift, so the residual above is rotation, not resampling;
-  - .NET build: 0 warnings / 0 errors;
-  - single-file publish gate: PASS;
-  - isolated final launch: stayed running 18 seconds with one file and no directories;
-  - browser QA baseline without an inventory: 63 EFM sliders (was 35), max |value| 2.93, mean
-    0.986, 0 pinned; rotated-source worst case 0.12, small-face worst case 0.09;
-  - browser QA inventory stage against the supplied `READ_ALL_SLIDERS_TEST.jslot`: 108 sliders
-    written across EFM/CME/NSK/SPG, 7 families detected, no index selector written, and
-    `SPG_ECEBrowThickness` (defined by FaceForge, absent from that install) correctly dropped.
-  - preset inspection against the supplied edited `Homelander.jslot`: 7 of 7 head parts resolved
-    by name (2 were unresolved before the BSA and ESL fixes), 4 required plugins recomputed from
-    the file against the 2 originally declared, all present with exact Vortex provenance.
-- Final EXE: `FaceForge 0.11.0 - STANDALONE.exe`
-  - 125,890,534 bytes, SHA-256 `E4FC3AC348E1A1C2904A8AFBCA168D7551CEFAA092D7A100C707F2B1B25796CA`.
-  - Present both at the project root and in `FaceForge 0.11.0\artifacts`.
-- Next command: user-side RaceMenu load at the chosen race/sex, in-game head bake, baked-head
-  check, and Follower Forge construction.
-- Runtime boundary: RaceMenu visual compatibility, in-game likeness, NIF/DDS materialization,
-  NPC plugin construction/gameplay, and live provider calls remain untested. Correction quality is
-  proven on synthetic geometry and one real portrait, not on a wide photographic sample.
+- Active version: `FaceForge 0.21.1` (parent 0.21.0), released
+- Implemented: `TriFile` (byte-verified FaceGen `.tri` reader, FaceForge.Core), the `--tri`
+  measuring mode on the Core test harness, and the measured `measurementBaselines` -- 32 of 39
+  replaced from renders of the four CharGen heads.
+- Final EXE: `FaceForge 0.21.1 - STANDALONE.exe` 125926440 bytes
+  SHA-256 `2EA7660891E04AE71762539E9AF3FAE14B6E68A7FD6BD0B11FB2A9A44A1FA783`
+- Rollback: `FaceForge 0.19.0\artifacts\` (the workspace root carries only the current release; each
+  superseded root copy is removed only after confirming its snapshot copy).
+- 0.19.1 fixed the race ranking: the eight races were each averaged over their own differing
+  proportion sets and those averages then sorted against each other, so Redguard was scored on a
+  dimension no rival was tested on. Ranking now uses the three proportions all races estimate, and
+  near-ties are labelled instead of ordered.
+- Tests: 61 frontend, 82 native. Clean .NET and frontend builds, single-file gate,
+  isolated one-file launch.
+- The EXE now reports its real version. It had been stamped 0.6.0 since 0.6.0.
+- **Next version is 0.21.0.** Snapshot a new folder; do not continue inside 0.20.0.
+
+## Why this version exists
+
+The slider model was estimated. A slider is the deviation of a face from the head it starts on, and
+that reference head had never been measured -- so every export carried a constant bias. Feeding the
+neutral head itself into 0.18.0 produced 107 non-zero sliders, mean 0.99, several pinned at +3.
+
+The mesh data that makes it measurable was loose on disk the whole time.
+
+## Calibration rig
+
+Reproducible, and it will be needed again for anything that changes what a head measures:
+
+```
+python qa/render-head.py --all   "<Data>/meshes" qa/heads   # the four neutral heads
+python qa/render-head.py --races "<Data>/meshes" qa/races   # nine race heads x two sexes
+vite preview --port 4173                                    # from the web build cache
+node qa/calibrate-baselines.mjs                             # universal baselines
+node qa/calibrate-races.mjs                                 # per-race factors
+```
+
+Convergence is the check: re-running against a build that already carries the calibrated values
+reproduces all 32 to the last digit.
+
+## What 0.20.0 did
+
+Measured all nine playable race heads from `<sex>HeadRaces.tri` and replaced the prose-derived race
+table, which had described Redguard with a "+8% broad nose" the real morph contradicts by being 3%
+narrower. Rebased the universal baselines onto the mean playable head, since 0.19.0 had measured a
+head carrying no race morph -- one no player ever sees.
+
+## Planned next
+
+1. **EFM morph response weights** (the original step 3, deferred). Measure each slider's plus/minus
+   morph pair from the TRI and replace the estimated response weights, settling the 0.16.0-0.18.0
+   High Poly Head gain question. `TriMorph.MaxDisplacement` and `--tri` already report displacement
+   at weight 1; missing is the slider-name to morph-pair mapping and a definition of "correct
+   response" in slider units.
+2. **Poor-pose handling — still entirely open.** 0.21.0's near-half weighting was withdrawn in
+   0.21.1 after it inflated mirrored widths up to 2.7x on the very photo it targeted. Before
+   retrying: work out why the inflation exceeded what a 0.8/0.2 blend can produce, and build a
+   real turned-photograph fixture. The synthetic mesh is symmetric by construction and passed the
+   broken change.
+3. Then the bounded solve, and sculpt as the residual.
+
+## Known defects, not yet fixed
+
+- **The diagnostic mesh renders as a jagged scribble on some inputs.** Seen on a heavily turned
+  portrait (26.8 degree turn, 26% left/right landmark disagreement, only 155 paired points); the
+  same panel draws correctly on a clean frontal photo. Cause unknown.
+- **A badly posed photo still produces a confident-looking result.** That run scaled widths by 1.120
+  to undo the turn, which inflated `jawWidth` to 0.830, and every downstream number inherited it.
+  0.21.0 stopped the hidden half from contributing equally, but the warnings still sit beside an
+  output that looks as certain as any other.
+- **Race names carry real-world coding.** A geometry-only ranking that prints percentages beside
+  Redguard, Nord and the elves will be read as an ethnicity claim whatever the code does. 0.19.1's
+  tie labelling reduces it; dropping the leaderboard for an unordered set of shape matches would
+  end it. Product decision, not a bug fix.
+
+## Open questions
+
+- **Do EFM sliders act on a High Poly Head head on this installation?** The only EFM head morph
+  file found is 996-vertex vanilla topology whose base extent matches the vanilla head exactly; the
+  HPH chargen TRI (3832 v) carries only the 122 vanilla morphs. User-side test: load an HPH preset
+  in RaceMenu and drag one EFM slider. If nothing moves, part of 0.15.0-0.18.0 tunes something
+  inert.
+- **Seven baselines are still estimates.** Brow height, angle, width and thickness, and iris size,
+  because Skyrim draws those as textures rather than geometry and a render cannot judge them.
+  `lipGap` because the four heads disagreed by 175% of the mean. They are marked in source, and
+  they are where the remaining neutral-head bias lives.
+- **How far does the race ranking deserve to be trusted at all?** The nine real morphs sit within
+  about 5% of each other, so most photographs will legitimately tie. Each race's own head now
+  identifies that race (regression test), but a photograph is not a race head.
+
+## Limits (unchanged)
+
+- No guessed sculpt vertex deltas (D-004). No UBE mapping. F5/F9 warp still future.
+- Runtime: tool-validated; RaceMenu likeness remains user-side.

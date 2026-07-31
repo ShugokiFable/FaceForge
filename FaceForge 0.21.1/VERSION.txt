@@ -1,0 +1,11 @@
+FaceForge 0.21.1
+
+Parent: FaceForge 0.21.0
+Created: 2026-07-31
+Owner: Claude Code
+Runtime status: released. 61 frontend tests, 82 native assertions, single-file gate, isolated
+one-file launch.
+
+Final EXE: FaceForge 0.21.1 - STANDALONE.exe
+Bytes:     125926440
+SHA-256:   2EA7660891E04AE71762539E9AF3FAE14B6E68A7FD6BD0B11FB2A9A44A1FA783
