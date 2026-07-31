@@ -4,12 +4,14 @@
 
 ## Download
 
-**`FaceForge 0.21.1 - STANDALONE.exe`**
+**`FaceForge-0.21.1-STANDALONE.exe`**
 
 | | |
 |--|--|
 | Bytes | 125,926,440 |
 | SHA-256 | `2EA7660891E04AE71762539E9AF3FAE14B6E68A7FD6BD0B11FB2A9A44A1FA783` |
+
+GitHub Releases asset filename: `FaceForge-0.21.1-STANDALONE.exe` (same bytes/hash as the workspace `FaceForge 0.21.1 - STANDALONE.exe`).
 
 Double-click. Requires Microsoft Edge WebView2 (usually already on Win10/11). No .NET SDK install.
 

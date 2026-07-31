@@ -18,7 +18,7 @@ Local-first Windows app. Indexes your installed Skyrim/Vortex/CharGen read-only,
 
 Download the one-file app from the [latest release](https://github.com/ShugokiFable/FaceForge/releases/latest):
 
-**`FaceForge 0.21.1 - STANDALONE.exe`**
+**`FaceForge-0.21.1-STANDALONE.exe`**
 
 | | |
 |--|--|
