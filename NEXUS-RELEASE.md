@@ -1,27 +1,52 @@
-# FaceForge — Nexus Mods page copy
+# FaceForge — Nexus Mods release kit
 
-**Version for this page:** 0.23.0  
-**Primary file:** `FaceForge-0.23.0-STANDALONE.exe`  
-**SHA-256:** `E13C9B656C418C4086F4894F244AB3A3514ACE999B799996C64CE89E7CF77507`  
+**Status:** ready to upload  
+**Version:** 0.23.0  
+**Main file to upload:** `FaceForge-0.23.0-STANDALONE.exe`  
 **Size:** 125,958,832 bytes  
+**SHA-256:** `E13C9B656C418C4086F4894F244AB3A3514ACE999B799996C64CE89E7CF77507`  
 
-Use the short summary in the mod summary field. Paste the BBCode into the full description.  
-Do **not** paste local disk paths, account names, or API keys.
+**Local path (for you only — do not put on Nexus):**  
+`Z:\Backup\!Skyrim AE\!!!SkyrimAEaiWorkspace\FaceForge\FaceForge-0.23.0-STANDALONE.exe`  
 
-Suggested Nexus category: **Utilities** (or **Modders Resources** if that fits your author preference).  
-Suggested tags: RaceMenu, FaceGen, CharGen, tool, utility, Windows
+**GitHub release:** https://github.com/ShugokiFable/FaceForge/releases/tag/v0.23.0  
 
----
-
-## Short summary (mod card / brief)
-
-```
-Windows tool that turns a photograph into an editable RaceMenu starting preset. Indexes your Vortex/CharGen install read-only, measures faces locally with MediaPipe, and exports real head-part records with plugin requirements. Optional vision refinement only after you consent. Not a finished follower — bake the head in RaceMenu, then use Follower Forge for the NPC plugin.
-```
+Do **not** paste local disk paths, usernames, or API keys on the Nexus page.
 
 ---
 
-## Detailed description (BBCode)
+## Nexus form fields
+
+| Field | Suggested value |
+|--------|------------------|
+| Mod name | FaceForge |
+| Category | Utilities |
+| Version | 0.23.0 |
+| Tags | Utilities for Players, Character Preset, RaceMenu, tool |
+| Language | English |
+| Adult content | No (utility; no adult assets shipped) |
+| Main file | `FaceForge-0.23.0-STANDALONE.exe` |
+| File type | Main File |
+| Software type | Utility / tool (executable) |
+
+**Requirements (Nexus requirements list):**
+- Skyrim Special Edition / Anniversary Edition (hard)
+- RaceMenu (hard, for loading presets)
+- Microsoft Edge WebView2 (usually already on Windows 10/11)
+- Optional: High Poly Head, EFM, FaceForge-related face mods the user already uses
+- Soft recommend: Follower Forge if building an NPC after baking the head
+
+---
+
+## Short summary (mod card — paste as-is)
+
+```
+Windows tool that turns a photograph into an editable Skyrim RaceMenu starting preset. Indexes your Vortex/CharGen install read-only, measures faces locally with MediaPipe, and exports real head-part records with plugin requirements. Optional vision refinement only after you consent. Not a finished follower — bake the head in RaceMenu, then use Follower Forge for the NPC plugin.
+```
+
+---
+
+## Detailed description (BBCode — paste as-is)
 
 ```bbcode
 [center][size=5][b]FaceForge[/b][/size]
@@ -35,6 +60,8 @@ No installer. One self-contained EXE.
 FaceForge is an [b]out-of-game Windows utility[/b]. It does [b]not[/b] replace RaceMenu, does not inject into Skyrim, and does not edit your load order.
 
 You give it a face photo (or multi-view photos / a slow turn video). It measures the face locally, ranks geometry-only race foundations from playable races, lets you pick race/sex and installed head parts, then writes a [b]RaceMenu preset pack[/b] (and related export options) you can finish in-game.
+
+Pair it with [b]Follower Forge[/b] if you want an NPC plugin after you bake the head in RaceMenu.
 
 [size=4][b]What you get in 0.23.0[/b][/size]
 [list]
@@ -67,7 +94,7 @@ You give it a face photo (or multi-view photos / a slow turn video). It measures
 [b]Optional[/b]
 [list]
 [*]A vision CLI or OpenRouter account for refinement / interpretation of difficult photos
-[*][url=https://github.com/ShugokiFable/FollowerForge]Follower Forge[/url] to build the NPC plugin after you bake the head in RaceMenu
+[*]Follower Forge to build the NPC plugin after you bake the head in RaceMenu
 [/list]
 
 [size=4][b]Installation[/b][/size]
@@ -131,23 +158,20 @@ GitHub: [url=https://github.com/ShugokiFable/FaceForge]github.com/ShugokiFable/F
 
 ---
 
-## Files tab notes (for you, the uploader)
+## Permissions / credits (Nexus checkboxes guidance)
 
-| Field | Value |
-|-------|--------|
-| Main file name | `FaceForge-0.23.0-STANDALONE.exe` |
-| Version | 0.23.0 |
-| Category | Main file |
-| Software description | Windows x64 utility; WebView2; local MediaPipe; optional user-initiated cloud vision |
+- Upload permission: your choice as author  
+- Assets: tool binaries + open-source libraries only; no redistributed game assets  
+- Credit: MediaPipe, Mutagen-related stacks, RaceMenu workflow (see GitHub notices)  
+- AI assistance: development was AI-assisted; page does not claim AI-generated faces are perfect  
 
-## Claims you may make (evidence-backed)
+## Claims you may make
 
-- Tool-validated: frontend tests 70/70, native assertions 92, single-file package SHA matches GitHub release
-- Does not write to game Data / Vortex staging by design
+- Tool-validated: frontend tests 70/70, native assertions 92, single-file package SHA matches GitHub  
+- Read-only toward game Data / Vortex staging  
 
-## Claims you should not make
+## Claims you must not make
 
-- “Perfect likeness every time”
-- “Fully tested with every face mod”
-- “Safe to update mid-save” (N/A — not an ESP)
-- Runtime RaceMenu likeness as guaranteed
+- Perfect likeness every time  
+- Fully tested with every face mod  
+- Runtime RaceMenu likeness as guaranteed  
