@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # FaceForge
 
@@ -14,16 +14,16 @@ Local-first Windows app. Indexes your installed Skyrim/Vortex/CharGen read-only,
 
 ---
 
-## Current release: 0.21.1
+## Current release: 0.23.0
 
 Download the one-file app from the [latest release](https://github.com/ShugokiFable/FaceForge/releases/latest):
 
-**`FaceForge-0.21.1-STANDALONE.exe`**
+**`FaceForge-0.23.0-STANDALONE.exe`**
 
 | | |
 |--|--|
-| Size | 125,926,440 bytes |
-| SHA-256 | `2EA7660891E04AE71762539E9AF3FAE14B6E68A7FD6BD0B11FB2A9A44A1FA783` |
+| Size | 125,958,832 bytes |
+| SHA-256 | `E13C9B656C418C4086F4894F244AB3A3514ACE999B799996C64CE89E7CF77507` |
 
 Double-click it. No install, no ZIP unpack, no .NET SDK. Microsoft Edge WebView2 Runtime is the usual Windows prerequisite (already present on most Win10/11 systems).
 
@@ -37,8 +37,9 @@ Double-click it. No install, no ZIP unpack, no .NET SDK. Microsoft Edge WebView2
 4. Suggests geometry-only race foundations from the **eight playable non-beast races** (measured from real `HeadRaces.tri` morphs). Never ethnicity classification; near-ties are labelled instead of faked confidence.
 5. You pick **target race and sex** from playable RACE records; that gates every head-part list and sets race-relative slider baselines.
 6. Prefer **High Poly Head** face/brows when the install has them; HPH exports use calibrated EFM response and declare empty sculpt host TRIs (no invented vertex deltas).
-7. Search exact installed hair, brow, eye, facial-hair, scar, and face-mesh **HDPT** records with `plugin|FormID`, Vortex source mod, masters, and missing requirements.
-8. Export a **RaceMenu Preset Pack**, **RaceMenu Head Export** stage, or preserved-source **Follower Head Kit**. Finished presets can be re-checked for real share requirements.
+7. Writes only **live** RaceMenu morphs for the head you chose — inert extension sliders are dropped so a player-looking preset does not go flat on a follower with a different mesh topology.
+8. Search exact installed hair, brow, eye, facial-hair, scar, and face-mesh **HDPT** records with `plugin|FormID`, Vortex source mod, masters, and missing requirements.
+9. Export a **RaceMenu Preset Pack**, **RaceMenu Head Export** stage, or preserved-source **Follower Head Kit**. Finished presets can be re-checked for real share requirements.
 
 Optional vision refinement (Codex / Claude / Gemini CLI, or OpenRouter) only runs after you press Refine and consent once. FaceForge never reads provider login tokens.
 
@@ -48,11 +49,13 @@ Optional vision refinement (Codex / Claude / Gemini CLI, or OpenRouter) only run
 
 | Area | What landed |
 |------|-------------|
-| **Measured heads** | Universal baselines and per-race foundations come from rendered CharGen / race TRI morphs (`TriFile`, calibration QA). Estimates that contradicted the game (e.g. Redguard nose width) were replaced. |
-| **Race ranking** | Comparable measurement-space ranking, Elder removed from recommendations, near-ties labelled. Not an ethnicity detector. |
-| **Detection & pose** | Harder photos: detection ladder, multi-face pick, tilt re-detect. Aggressive turn-half blend from 0.21.0 was **withdrawn** in 0.21.1 after real-photo inflation. |
-| **HPH** | Install-aware High Poly Head prefer; stronger HPH EFM calibration; empty sculpt host declaration (D-004). |
-| **Sliders** | Install-learned slider inventory, family ranges (EFM ±3, CME/SPID-class ±1), sex touch-up and optional geometry styles. |
+| **Live morphs (0.23)** | Install-aware MorphRegistry: omit sliders the target head cannot move (HPH/EFM mismatch fix for follower flat face). |
+| **Reliability & vision (0.22)** | Source reliability verdict; adaptive full vision interpretation for stylized/unreliable sources. |
+| **Measured heads** | Universal baselines and per-race foundations from rendered CharGen / race TRI morphs. |
+| **Race ranking** | Measurement-space ranking, Elder removed from recommendations, near-ties labelled. Not an ethnicity detector. |
+| **Detection & pose** | Detection ladder, multi-face pick, tilt re-detect. Aggressive turn-half blend from 0.21.0 was **withdrawn** in 0.21.1. |
+| **HPH** | Install-aware High Poly Head prefer; empty sculpt host declaration (no invented vertex deltas). |
+| **Sliders** | Install-learned inventory, family ranges, sex touch-up and optional geometry styles. |
 | **Presets** | Finished-preset requirement recompute; BSA/ESL head-part resolve fixes. |
 
 Full history: [CHANGELOG.txt](CHANGELOG.txt).
@@ -71,17 +74,17 @@ Full history: [CHANGELOG.txt](CHANGELOG.txt).
 
 ## Build from source
 
-Active ship tree: [`FaceForge 0.21.1/`](FaceForge%200.21.1/)
+Active ship tree: [`FaceForge 0.23.0/`](FaceForge%200.23.0/)
 
 Requirements: Windows x64, .NET SDK 8+, Node.js 20+ (pnpm via corepack is fine).
 
 ```powershell
-cd "FaceForge 0.21.1"
+cd "FaceForge 0.23.0"
 .\build.ps1
 .\package.ps1
 ```
 
-Result: `artifacts\FaceForge 0.21.1 - STANDALONE.exe` (also published to the repo root when packaging for release).
+Result: `artifacts\FaceForge 0.23.0 - STANDALONE.exe` (GitHub Releases use `FaceForge-0.23.0-STANDALONE.exe`).
 
 ---
 
@@ -89,11 +92,11 @@ Result: `artifacts\FaceForge 0.21.1 - STANDALONE.exe` (also published to the rep
 
 | Path | Role |
 |------|------|
-| `FaceForge 0.21.1/src/FaceForge.Web` | Analysis UI, MediaPipe, template engine |
-| `FaceForge 0.21.1/src/FaceForge.Core` | Discovery, Vortex/CharGen index, TRI reader, packaging |
-| `FaceForge 0.21.1/src/FaceForge.Desktop` | WPF + WebView2 host |
-| `FaceForge 0.21.1/src/FaceForge.Core.Tests` | Native validation tests |
-| `FaceForge 0.21.1/qa` | Browser QA, head render/calibration scripts |
+| `FaceForge 0.23.0/src/FaceForge.Web` | Analysis UI, MediaPipe, template engine |
+| `FaceForge 0.23.0/src/FaceForge.Core` | Discovery, Vortex/CharGen index, TRI reader, MorphRegistry, packaging |
+| `FaceForge 0.23.0/src/FaceForge.Desktop` | WPF + WebView2 host |
+| `FaceForge 0.23.0/src/FaceForge.Core.Tests` | Native validation tests |
+| `FaceForge 0.23.0/qa` | Browser QA, head render/calibration scripts |
 
 ---
 

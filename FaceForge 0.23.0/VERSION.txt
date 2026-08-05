@@ -1,0 +1,11 @@
+FaceForge 0.23.0
+
+Parent: FaceForge 0.22.0
+Created: 2026-08-05
+Owner: Claude Code
+Runtime status: tool-validated. 70 frontend tests, 92 native assertions, TypeScript,
+zero-warning .NET Release, single-file publish.
+
+Final EXE: FaceForge 0.23.0 - STANDALONE.exe
+Bytes:     125958832
+SHA-256:   E13C9B656C418C4086F4894F244AB3A3514ACE999B799996C64CE89E7CF77507

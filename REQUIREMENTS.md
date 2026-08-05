@@ -1,4 +1,18 @@
-# FaceForge 0.6.0 requirements ledger
+# FaceForge requirements ledger
+
+## FaceForge 0.22.0
+
+| ID | Requirement | Evidence |
+|---|---|---|
+| R-022-01 | Preserve 0.21.1 and work only in a full-copy successor. | 1,015 files / 882,770,886 bytes copied with path/length parity |
+| R-022-02 | Detect stylized or unreliable local results before vision. | deterministic reliability verdict and frontend regression |
+| R-022-03 | Rebuild unreliable results from neutral, not from bad values. | explicit interpretation mode drives frontend baseline and native +/-3 schema |
+| R-022-04 | Keep clean photo refinement conservative. | clean-photo browser QA and native +/-1 schema assertion |
+| R-022-05 | Explain the decision to the user. | rendered recommendation banner, reason list, and adaptive button label |
+| R-022-06 | Keep uploads opt-in and avoid silent web identity search. | existing consent gate preserved; no search/upload automation added |
+| R-022-07 | Ship one shareable Windows EXE. | single-file publish and isolated one-file launch |
+
+## Historical 0.6.0 ledger
 
 | ID | Requirement | Evidence |
 |---|---|---|

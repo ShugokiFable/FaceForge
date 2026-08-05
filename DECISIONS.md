@@ -1,5 +1,53 @@
 ﻿# Decisions
 
+## 0.23.0 - a registered slider is not a working slider (2026-08-05)
+
+- **Liveness is proven from geometry, not from the plugin list.** A RaceMenu slider appears
+  whenever some `races.ini` registers it and moves the face only when its morph pair exists in a
+  `.tri` matching the worn mesh's vertex count. Those conditions are independent. FaceForge checked
+  the first, via a slider inventory read from a user preset -- and a preset lists every registered
+  slider whether or not it does anything. Measured here: 51 EFM sliders are live on the vanilla
+  head and inert on High Poly Head, because Expressive Facegen Morphs registers its extension
+  against the vanilla path and ships 996-vertex morphs while the HPH head is 3832.
+- **Vertex count is the check the engine cannot fudge.** A morph is a flat per-vertex delta array,
+  so a count mismatch cannot be applied under any interpretation. That makes it a decidable test
+  offline, unlike anything inferred from mod names or plugin presence.
+- **Inspect every part, not just the head.** A slider is applied to whichever mesh carries its
+  morph. Checking the head alone marked every eye, brow, and mouth slider inert. High Poly Head
+  replaces the head and brows but leaves eyes and mouth vanilla, which is exactly why the EFM
+  sliders that still work on HPH are the eye and mouth ones.
+- **The gate only ever subtracts.** The registry reads loose files, so a slider ini inside a BSA is
+  invisible to it -- ECE Sliders for Racemenu ships exactly that way. A slider the registry has
+  never heard of keeps whatever the inventory decided. Treating "not found" as "inert" would
+  silently delete working sliders, a worse failure than the one being fixed, so absence of evidence
+  is not evidence of absence here and a test pins it.
+- **Drop inert sliders, but say so.** Writing dead keys is dishonest output; silently removing a
+  third of the face is a different dishonesty. The analysis notice reports the count and the reason.
+- **Export Head bakes shape into vertices; the jslot does not carry it.** Fitting an exported head
+  against the 122-morph vanilla set leaves 58.6% unexplained for a FaceForge preset and 57.9% for a
+  hand-made sculpted one. Two heads built by different routes keep the same proportion of
+  non-vanilla shape, so the exported NIF is the vertex-space representation -- not the preset.
+  The fit must be pair-bounded: unconstrained least squares puts +6978 on `CheeksUp` against -6976
+  on `CheeksDown` and explains anything asked of it.
+- **What FaceForge does not write cannot be FaceForge's bug.** It emits no `tintInfo` and no
+  head-part `type` ordinal, so the skin tone and type ordinals reported in a generated preset are
+  inherited from the foundation the user loaded. Checked before changing anything.
+
+## 0.22.0 - a detected mesh is not automatically a trustworthy measurement (2026-08-01)
+
+- **Vision mode follows reliability, not detector success.** MediaPipe can return every landmark
+  for stylized art or a badly turned face while the resulting proportions are still implausible.
+  Stylized sources and analyses with poor quality, weak axis confidence, severe left/right
+  disagreement, too few paired landmarks, many held measurements, or several near-limit EFM
+  values therefore request a full interpretation from neutral.
+- **One mode owns prompt, range, and baseline.** Refinement is a +/-1 delta applied to trustworthy
+  local values. Interpretation is a +/-3 absolute result applied to neutral. Carrying one explicit
+  mode through the frontend and desktop bridge prevents the prompt and result application from
+  disagreeing again.
+- **Do not silently search or upload.** Character-name lookup can choose the wrong design, and face
+  uploads are privacy-sensitive. Vision remains explicit and consent-gated; the user controls the
+  source images.
+
 ## 0.20.0 - the game states what a race head is; do not describe it in prose (2026-07-31)
 
 - **Never estimate something the game files state exactly.** The race table was written from
@@ -411,6 +459,5 @@ A mod becomes an appearance candidate only after exact deployed mesh/texture/TRI
 ## D-020: Do not invent head-part records
 
 Asset and plugin evidence cannot safely choose a visual brow mesh or unparsed head-part FormID. FaceForge recommends the installed pack and measured visual target, while the user selects the matching head part in RaceMenu. Saved RaceMenu output then carries the real dependency.
-
 
 

@@ -1,3 +1,66 @@
+FaceForge 0.23.0 - 2026-08-05
+
+- Started from a complete 0.22.0 snapshot.
+- Fixed the defect behind "the preset looks right on the player but flat on a follower built from
+  it": FaceForge was writing sliders that the target head cannot move. Measured on this
+  installation, 51 of the EFM sliders it emits are inert on a High Poly Head character.
+- Added FaceForge.Core/MorphRegistry: reads the installation's own
+  meshes\actors\character\facegenmorphs tree -- morphs.ini extension registrations, races.ini
+  per-race slider sets, and sliders\*.ini morph pairs -- then loads every chargen .tri the
+  character wears (head, brows, eyes, mouth) and keeps only the morphs whose vertex count matches
+  the mesh they claim to extend.
+- A RaceMenu slider is now classified live or inert from that evidence rather than from the plugin
+  being installed. Inert sliders are left out of the preset instead of written as dead keys, and
+  the analysis notice says how many were dropped and why.
+- The rule only ever subtracts. A slider the registry has never heard of -- a slider ini shipped
+  inside a BSA is invisible to a loose-file read -- keeps whatever the inventory decided, so
+  "not found" can never silently delete a working slider.
+- Corrected a documented assumption in hphCalibration: High Poly Head does not ship EFM-compatible
+  morphs. Expressive Facegen Morphs registers its extension against the vanilla
+  Actors\Character\Character Assets head and ships 996-vertex morphs; the HPH head is 3832, and
+  nothing on this install registers an EFM extension against the KL path.
+- Settled the open question from the Follower Forge handoff: RaceMenu's Export Head does bake
+  slider shaping into vertices. A bounded pair fit of the exported head against the full 122-morph
+  vanilla set explains only 41.4% of its displacement (Inoue) and 42.1% (the known-good Silvia
+  preset), so the extension morphs are present in the exported geometry. The jslot carries no
+  vertex data; the exported NIF does.
+- Confirmed FaceForge writes no tintInfo and no head-part `type` ordinal. Both come from whichever
+  foundation preset the user loads, so the RGB(206,205,204) skin tone and the differing type
+  ordinals in the reported preset are inherited, not generated.
+- Added qa/measure-exported-head.py, the rig that produced those numbers: it parses
+  BSDynamicTriShape vertices out of a FaceGeom NIF and fits them against a chargen .tri.
+- 70 frontend tests (8 new), 92 native assertions (10 new), TypeScript, zero-warning .NET Release.
+
+Runtime status: tool-validated. Live RaceMenu load of a follower preset built from an HPH export,
+and in-game likeness, remain user-side tests.
+Final EXE: FaceForge 0.23.0 - STANDALONE.exe 125958832 bytes
+SHA-256 E13C9B656C418C4086F4894F244AB3A3514ACE999B799996C64CE89E7CF77507
+
+FaceForge 0.22.0 - 2026-08-01
+
+- Started from a complete 0.21.1 snapshot: 1,015 files / 882,770,886 bytes with zero
+  relative-path or length differences.
+- Added a reliability verdict using existing source quality, pose confidence, left/right
+  disagreement, surviving landmark pairs, held measurements, stylized-source classification, and
+  near-limit slider evidence.
+- Stylized and unreliable analyses now ask Codex, Claude, Gemini, or OpenRouter for a full +/-3
+  interpretation and apply it to a neutral EFM face. Reliable photos retain conservative +/-1
+  refinement on their local values.
+- Added a visible `Vision interpretation recommended` reason block and adaptive
+  `Interpret face with vision model` button. Local values remain editable and exportable.
+- Strengthened the shared vision prompt to preserve distinctive silhouette and feature
+  relationships while translating anime exaggeration into believable Skyrim anatomy.
+- Preserved explicit per-request consent and declined silent character-name web search or extra
+  uploads.
+- Verified the rendered clean-photo and Anime/Art paths, 62 frontend tests, 82 native assertions,
+  TypeScript/Vite, zero-warning .NET Release, single-file publish, release-tree gate, and isolated
+  one-file launch.
+
+Runtime status: tool-validated. Live provider quality, Frieren likeness, RaceMenu load/head bake,
+and follower construction remain user-side tests.
+Final EXE: FaceForge 0.22.0 - STANDALONE.exe 125934029 bytes
+SHA-256 6E808E00DDFA11AECF55944662B39FA380DE6E8FDB74A4FE0FE1F65A7C47BF44
+
 FaceForge 0.21.1 - 2026-07-31
 
 - Withdrew 0.21.0's camera-facing-half weighting. On the exact photograph it was written for -- a
@@ -520,8 +583,6 @@ FaceForge 0.1.0 - 2026-07-29
 - Added a local Windows WebView2 desktop host and offline model/wasm packaging.
 
 Runtime status: tool-validated only until a generated preset is loaded and checked in RaceMenu.
-
-
 
 
 
