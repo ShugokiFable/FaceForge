@@ -1,0 +1,10 @@
+﻿FaceForge 0.23.1
+
+Parent: FaceForge 0.23.0
+Created: 2026-08-05
+Brand: FollowerForge pair naming (was "Follower Forge").
+
+Final EXE: FaceForge-0.23.1-STANDALONE.exe
+Also: FaceForge 0.23.1 - STANDALONE.exe
+Bytes: 125958298
+SHA-256: 933E62EFD5036B47EA4ACFAD880B857EA57415E16BD155EC72E8395E45D248EE

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>FaceForge</AssemblyName>
+    <RootNamespace>FaceForge.Desktop</RootNamespace>
+    <Product>FaceForge</Product>
+    <AssemblyTitle>FaceForge</AssemblyTitle>
+    <Description>On-device photo-guided RaceMenu preset creator.</Description>
+    <Company>FaceForge</Company>
+    <Version>0.23.1</Version>
+    <FileVersion>0.23.1.0</FileVersion>
+    <InformationalVersion>0.23.1</InformationalVersion>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FaceForge.Core\FaceForge.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\FaceForge.WebBundle.zip" />
+  </ItemGroup>
+
+  <Target Name="RequireWebBuild" BeforeTargets="BeforeBuild">
+    <Error
+      Condition="!Exists('Resources\FaceForge.WebBundle.zip')"
+      Text="The FaceForge web bundle has not been prepared. Run build.ps1 first." />
+  </Target>
+</Project>

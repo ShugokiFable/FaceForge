@@ -1,3 +1,18 @@
+# CHANGELOG — FaceForge
+# One living file.
+
+# CHANGELOG — FaceForge
+
+================================================================================
+## [0.23.1] - 2026-08-05 - pair branding: FollowerForge
+Agent: Grok
+Parent: FaceForge 0.23.0
+
+Changed:
+  - All user-facing "Follower Forge" strings → **FollowerForge** (matches companion tool + GitHub).
+  - Version ship 0.23.1.
+
+Nexus: YES
 FaceForge 0.23.0 - 2026-08-05
 
 - Started from a complete 0.22.0 snapshot.
@@ -19,7 +34,7 @@ FaceForge 0.23.0 - 2026-08-05
   morphs. Expressive Facegen Morphs registers its extension against the vanilla
   Actors\Character\Character Assets head and ships 996-vertex morphs; the HPH head is 3832, and
   nothing on this install registers an EFM extension against the KL path.
-- Settled the open question from the Follower Forge handoff: RaceMenu's Export Head does bake
+- Settled the open question from the FollowerForge handoff: RaceMenu's Export Head does bake
   slider shaping into vertices. A bounded pair fit of the exported head against the full 122-morph
   vanilla set explains only 41.4% of its displacement (Inoue) and 42.1% (the known-good Silvia
   preset), so the extension morphs are present in the exported geometry. The jslot carries no
@@ -382,18 +397,18 @@ FaceForge 0.12.0 - 2026-07-30
   and isolated one-file launch.
 
 Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head
-bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+bake, FollowerForge NPC construction, and live provider calls remain user-side validation.
 FaceForge 0.11.0 - 2026-07-30
 
 - Added the finished-preset check. A preset changes after FaceForge writes it: picking different eyes, hair, brows or a head mesh in RaceMenu rewrites the head-part list, so the dependency report generated at export time stops describing the file. Sharing that stale report hands the recipient a preset that silently falls back to defaults for every part they lack.
 - Loading a finished preset now recomputes its requirements from its own records: every head part resolved to a name, category, sex and valid races; every plugin those parts come from; whether each is installed here and which Vortex mod supplied it; slider count by family; sculpt hosts; tint layers; whether the vanilla CharGen base block is present; and a share-ready verdict with named blockers.
 - The inspected preset is also adopted as the export source, so the Preset Pack ships the recomputed requirements rather than the ones FaceForge guessed when it first wrote the file.
 - Fixed head parts from BSA-packed mods never resolving. The head-part index only parses plugins whose source mod deployed loose face assets, so a mod shipping its meshes inside a BSA contributed no records. Unresolved parts now trigger an on-demand parse of their own plugin.
-- Fixed ESL head parts never resolving. RaceMenu writes a light plugin's head part with the 0xFE load index still embedded in the identifier, so "AdvancedEyesAddon_CVEObyLDD.esp|4BED40" refers to the record the plugin itself calls 000D40. The low twelve bits are now masked out before matching, which is the same convention Follower Forge already uses.
+- Fixed ESL head parts never resolving. RaceMenu writes a light plugin's head part with the 0xFE load index still embedded in the identifier, so "AdvancedEyesAddon_CVEObyLDD.esp|4BED40" refers to the record the plugin itself calls 000D40. The low twelve bits are now masked out before matching, which is the same convention FollowerForge already uses.
 - Verified against the supplied edited Homelander.jslot: before these two fixes, two of seven head parts were unresolved; after them, all seven resolve by name, including the ESL eye record and the BSA-packed KS Hairdo. Requirements went from the two plugins FaceForge originally declared to the four the file actually needs, all present, each with its exact Vortex source mod.
 - Verified 42 frontend tests, 71 native assertions, browser QA across four source variants, clean .NET build, single-file gate, and isolated one-file launch.
 
-Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, FollowerForge NPC construction, and live provider calls remain user-side validation.
 
 FaceForge 0.10.0 - 2026-07-30
 
@@ -412,7 +427,7 @@ FaceForge 0.10.0 - 2026-07-30
 - Verified against the supplied install: output moved from 35 sliders to 108, across EFM, CME, NSK and SPG. No index selector was written, and SPG_ECEBrowThickness, which FaceForge defines but that install does not, was correctly dropped.
 - Verified 42 frontend tests, 58 native assertions, browser QA across four source variants including the live inventory stage, clean .NET build, single-file gate, and isolated one-file launch.
 
-Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, FollowerForge NPC construction, and live provider calls remain user-side validation.
 
 FaceForge 0.9.0 - 2026-07-30
 
@@ -428,7 +443,7 @@ FaceForge 0.9.0 - 2026-07-30
 - Added 8 native assertions covering the vision context bounds, both prompt variants, the style instruction, the CLI prompt bound, the schema bound, and rejection of an out-of-range refinement delta.
 - Verified 39 frontend tests, 58 native assertions, live deployment indexing, rendered browser QA across three source variants, clean .NET build, single-file gate, and isolated one-file launch.
 
-Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, FollowerForge NPC construction, and live provider calls remain user-side validation.
 
 FaceForge 0.8.0 - 2026-07-30
 
@@ -449,7 +464,7 @@ FaceForge 0.8.0 - 2026-07-30
 - Added a rotated-source stage to the browser QA that re-imports the same portrait tilted 16 degrees through the real landmark model and asserts the exported sliders land back on the straight run.
 - Verified 39 frontend tests, 50 native assertions, live deployment indexing, rendered browser QA, clean .NET build, single-file gate, and isolated one-file launch.
 
-Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction, and live provider calls remain user-side validation.
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, FollowerForge NPC construction, and live provider calls remain user-side validation.
 
 FaceForge 0.7.0 - 2026-07-30
 
@@ -462,13 +477,13 @@ FaceForge 0.7.0 - 2026-07-30
 - Added gender gating from the HDPT Male/Female flags, and race gating by resolving each record's ValidRaces form list against the installed RACE records. Records with neither gender flag stay visible; an unresolvable ValidRaces list is reported as unknown, never as invalid.
 - Added a target race and sex selector built from the 10 playable RACE records parsed out of the installed base game, wired to the head-part lists and written into the export README and manifests.
 - Added base-game plugins to the head-part index, so vanilla hair, eyes, and brows are selectable without a mod supplying them.
-- Fixed the follower head export. The 0.6.0 manifest named Data/Meshes/CharGen/Exported and Data/Textures/CharGen/Exported, which neither RaceMenu writes nor Follower Forge reads, so the follower path could never complete.
-- Corrected the round trip to the evidenced paths: RaceMenu writes Data/SKSE/Plugins/CharGen/<name>.nif and .dds beside Presets/<name>.jslot, and Follower Forge enumerates NIF files in Data/SKSE/Plugins/CharGen.
-- Added a baked-head check that scans the indexed Data folder for that trio and adopts it as the Follower Head Kit source, closing the FaceForge -> RaceMenu -> Follower Forge loop.
+- Fixed the follower head export. The 0.6.0 manifest named Data/Meshes/CharGen/Exported and Data/Textures/CharGen/Exported, which neither RaceMenu writes nor FollowerForge reads, so the follower path could never complete.
+- Corrected the round trip to the evidenced paths: RaceMenu writes Data/SKSE/Plugins/CharGen/<name>.nif and .dds beside Presets/<name>.jslot, and FollowerForge enumerates NIF files in Data/SKSE/Plugins/CharGen.
+- Added a baked-head check that scans the indexed Data folder for that trio and adopts it as the Follower Head Kit source, closing the FaceForge -> RaceMenu -> FollowerForge loop.
 - Added a corepack fallback and pnpm shim to build.ps1 so the build gate runs without a global pnpm install.
 - Verified 25 frontend tests, 50 native assertions, live deployment indexing, rendered browser QA including exported slider magnitudes, clean .NET build, single-file gate, and isolated one-file launch.
 
-Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, Follower Forge NPC construction/gameplay, and live provider calls remain user-side validation.
+Runtime status: tool-validated; RaceMenu visual compatibility, in-game likeness, the RaceMenu head bake, FollowerForge NPC construction/gameplay, and live provider calls remain user-side validation.
 
 FaceForge 0.6.0 - 2026-07-29
 
@@ -481,7 +496,7 @@ FaceForge 0.6.0 - 2026-07-29
 - Renamed the JSlot-only product to RaceMenu Head Export and added honest RaceMenu-to-Follower-Forge handoff instructions.
 - Verified 22 frontend tests, 37 native assertions, live deployment indexing, rendered UI interaction, clean .NET build, release-tree validation, and isolated one-file launch.
 
-Runtime status: tool-validated; RaceMenu visual compatibility, external NIF/DDS export, Follower Forge NPC construction/gameplay, and live provider calls remain user-side validation.
+Runtime status: tool-validated; RaceMenu visual compatibility, external NIF/DDS export, FollowerForge NPC construction/gameplay, and live provider calls remain user-side validation.
 
 FaceForge 0.5.0 - 2026-07-29
 
@@ -564,12 +579,12 @@ FaceForge 0.2.0 - 2026-07-29
 
 - Started a full-copy successor from the tool-validated 0.1.0 snapshot (4,302 copied files before disposable-cache cleanup).
 - Added requirements for exact Vortex deployment indexing, plugin-to-source-mod provenance, missing-dependency reporting, CharGen trio discovery, and archive-aware status.
-- Added separate RaceMenu Preset Pack and Follower Forge Head Kit output contracts.
+- Added separate RaceMenu Preset Pack and FollowerForge Head Kit output contracts.
 - Added opt-in OpenRouter vision refinement with session-only credentials, explicit photo-upload consent, strict structured output, and privacy-constrained routing.
-- Added a streaming native Vortex/CharGen index, exact plugin provenance, multi-sculpt parsing, deterministic ZIP packaging, and a Follower Forge handoff manifest.
+- Added a streaming native Vortex/CharGen index, exact plugin provenance, multi-sculpt parsing, deterministic ZIP packaging, and a FollowerForge handoff manifest.
 - Added frontend/native contract tests, real-deployment index validation, browser workflow QA, compact-layout screenshots, and a native launch check.
 - Added an obvious root-level READY TO USE folder, matching SHARE THIS ZIP, and START HERE instructions.
-- Preserved 0.1.0 as the rollback release; installed game, Vortex staging, CharGen, Follower Forge, Downloads examples, and reference roots remain read-only.
+- Preserved 0.1.0 as the rollback release; installed game, Vortex staging, CharGen, FollowerForge, Downloads examples, and reference roots remain read-only.
 
 Runtime status: tool-validated; generated output still requires user-side RaceMenu and follower gameplay validation.
 

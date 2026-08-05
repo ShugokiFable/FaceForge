@@ -1,4 +1,4 @@
-﻿# Build outputs
+# Build outputs
 bin/
 obj/
 **/bin/
@@ -78,4 +78,5 @@ FaceForge 0.22.0/
 *.pyc
 
 FaceForge-*-STANDALONE.exe
-
+FaceForge 0.23.0/
+ChatGPT Image*.png

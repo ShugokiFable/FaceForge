@@ -52,7 +52,7 @@ conclusion in that file is unaffected.
 
 Reproduce: `dotnet run --project src/FaceForge.Core.Tests -- --morphs "<Data>" NordRace`.
 
-## Handoff questions from the Follower Forge session, answered
+## Handoff questions from the FollowerForge session, answered
 
 1. **Does RaceMenu's Export Head bake slider shaping into vertices?** Yes.
    `qa/measure-exported-head.py` fits an exported head against the full 122-morph vanilla set with

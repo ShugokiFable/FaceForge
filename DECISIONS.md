@@ -1,4 +1,4 @@
-﻿# Decisions
+# Decisions
 
 ## 0.23.0 - a registered slider is not a working slider (2026-08-05)
 
@@ -333,13 +333,13 @@ filter the head-part lists and are written into the export README and manifests,
 silently ignores head parts that are invalid for the active race or sex â€” which made a correct
 selection in FaceForge look broken in game.
 
-## D-029: The follower handoff names only paths RaceMenu writes and Follower Forge reads
+## D-029: The follower handoff names only paths RaceMenu writes and FollowerForge reads
 
 The 0.6.0 export manifest told the user to expect `Data/Meshes/CharGen/Exported/<name>.nif` and
 `Data/Textures/CharGen/Exported/<name>.dds`. Neither exists. RaceMenu writes the companion head
 mesh and tint texture as `Data/SKSE/Plugins/CharGen/<name>.nif` and `.dds` beside
 `Presets/<name>.jslot` â€” the layout used by every preset mod installed here and by all five
-supplied reference packs â€” and Follower Forge's CharGen discovery enumerates NIF files in
+supplied reference packs â€” and FollowerForge's CharGen discovery enumerates NIF files in
 `Data/SKSE/Plugins/CharGen`. The follower path could therefore never complete regardless of what
 the user did in game.
 
@@ -354,7 +354,7 @@ FaceForge only offers parsed HDPT records for brows, eyes, and hair. Texture ove
 
 ## D-027: A JSlot-only package is a RaceMenu export stage, not a follower
 
-The former New Follower Workflow did not contain FaceGeom NIF, FaceTint DDS, or an NPC plugin. It is now named RaceMenu Head Export and explicitly stops at the JSlot plus exact selection/dependency manifests. RaceMenu must materialize the matching NIF/DDS, after which Follower Forge handles race, voice, class, placement, equipment, spells, perks, behavior, and the NPC plugin.
+The former New Follower Workflow did not contain FaceGeom NIF, FaceTint DDS, or an NPC plugin. It is now named RaceMenu Head Export and explicitly stops at the JSlot plus exact selection/dependency manifests. RaceMenu must materialize the matching NIF/DDS, after which FollowerForge handles race, voice, class, placement, equipment, spells, perks, behavior, and the NPC plugin.
 
 ## D-026: Exact parsed records replace whole-pack guesses
 

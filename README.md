@@ -64,7 +64,7 @@ Full history: [CHANGELOG.txt](CHANGELOG.txt).
 
 ## Honest limits
 
-- Output is a **RaceMenu starting preset**, not a finished follower. FaceGen NIF/DDS only come from saving in RaceMenu in-game; Follower Forge builds the NPC plugin afterward.
+- Output is a **RaceMenu starting preset**, not a finished follower. FaceGen NIF/DDS only come from saving in RaceMenu in-game; FollowerForge builds the NPC plugin afterward.
 - **Sculpt vertex deltas are not invented.** Host TRI paths can be declared empty for HPH topology; likeness finish is RaceMenu Sculpt / F5–F9.
 - Depth/projection and tooth sliders are not invented from a single front photo.
 - Badly posed photos can still look confident in the UI; check analysis warnings.
@@ -102,7 +102,7 @@ Result: `artifacts\FaceForge 0.23.0 - STANDALONE.exe` (GitHub Releases use `Face
 
 ## Related
 
-- [Follower Forge](https://github.com/ShugokiFable/FollowerForge) — build the NPC plugin after RaceMenu bakes the head.
+- [FollowerForge](https://github.com/ShugokiFable/FollowerForge) — build the NPC plugin after RaceMenu bakes the head.
 - [Skyrim Forge](https://github.com/ShugokiFable/skyrim-forge) — typed Skyrim automation broker.
 
 Vortex staging, Skyrim `Data`, CharGen, saves, and profiles are always **read-only** evidence. FaceForge never edits your load order.

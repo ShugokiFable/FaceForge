@@ -1,0 +1,122 @@
+[
+  {
+    "id": "female:Neutral",
+    "sex": "female",
+    "race": "Neutral",
+    "file": "race_female_Neutral.png"
+  },
+  {
+    "id": "female:BretonRace",
+    "sex": "female",
+    "race": "BretonRace",
+    "file": "race_female_BretonRace.png"
+  },
+  {
+    "id": "female:DarkElfRace",
+    "sex": "female",
+    "race": "DarkElfRace",
+    "file": "race_female_DarkElfRace.png"
+  },
+  {
+    "id": "female:ElderRace",
+    "sex": "female",
+    "race": "ElderRace",
+    "file": "race_female_ElderRace.png"
+  },
+  {
+    "id": "female:HighElfRace",
+    "sex": "female",
+    "race": "HighElfRace",
+    "file": "race_female_HighElfRace.png"
+  },
+  {
+    "id": "female:ImperialRace",
+    "sex": "female",
+    "race": "ImperialRace",
+    "file": "race_female_ImperialRace.png"
+  },
+  {
+    "id": "female:NordRace",
+    "sex": "female",
+    "race": "NordRace",
+    "file": "race_female_NordRace.png"
+  },
+  {
+    "id": "female:OrcRace",
+    "sex": "female",
+    "race": "OrcRace",
+    "file": "race_female_OrcRace.png"
+  },
+  {
+    "id": "female:RedguardRace",
+    "sex": "female",
+    "race": "RedguardRace",
+    "file": "race_female_RedguardRace.png"
+  },
+  {
+    "id": "female:WoodElfRace",
+    "sex": "female",
+    "race": "WoodElfRace",
+    "file": "race_female_WoodElfRace.png"
+  },
+  {
+    "id": "male:Neutral",
+    "sex": "male",
+    "race": "Neutral",
+    "file": "race_male_Neutral.png"
+  },
+  {
+    "id": "male:BretonRace",
+    "sex": "male",
+    "race": "BretonRace",
+    "file": "race_male_BretonRace.png"
+  },
+  {
+    "id": "male:DarkElfRace",
+    "sex": "male",
+    "race": "DarkElfRace",
+    "file": "race_male_DarkElfRace.png"
+  },
+  {
+    "id": "male:ElderRace",
+    "sex": "male",
+    "race": "ElderRace",
+    "file": "race_male_ElderRace.png"
+  },
+  {
+    "id": "male:HighElfRace",
+    "sex": "male",
+    "race": "HighElfRace",
+    "file": "race_male_HighElfRace.png"
+  },
+  {
+    "id": "male:ImperialRace",
+    "sex": "male",
+    "race": "ImperialRace",
+    "file": "race_male_ImperialRace.png"
+  },
+  {
+    "id": "male:NordRace",
+    "sex": "male",
+    "race": "NordRace",
+    "file": "race_male_NordRace.png"
+  },
+  {
+    "id": "male:OrcRace",
+    "sex": "male",
+    "race": "OrcRace",
+    "file": "race_male_OrcRace.png"
+  },
+  {
+    "id": "male:RedguardRace",
+    "sex": "male",
+    "race": "RedguardRace",
+    "file": "race_male_RedguardRace.png"
+  },
+  {
+    "id": "male:WoodElfRace",
+    "sex": "male",
+    "race": "WoodElfRace",
+    "file": "race_male_WoodElfRace.png"
+  }
+]

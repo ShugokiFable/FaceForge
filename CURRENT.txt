@@ -1,1 +1,1 @@
-FaceForge 0.23.0
+﻿FaceForge 0.23.1
