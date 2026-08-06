@@ -1,5 +1,37 @@
 # Decisions
 
+## 0.24.1 - a rejected measurement is not the same as an unmeasurable one (2026-08-06)
+
+- **Check whether the data already exists before capping a guess.** 0.24.0 bounded five estimated
+  baselines. Three had rendered measurements sitting in `qa/race-calibration.json` since 0.20.0,
+  passing 0.19.0's own acceptance rule at 4.0%, 8.5% and 24.3% disagreement. The cap was the right
+  instinct applied one layer too late; the guesses were 40%, 63% and 30% low and did not need to
+  exist.
+- **A true premise can carry a false conclusion.** 0.19.0 was correct that Skyrim paints brows and
+  irises on as textures and that the neutral head has no brow geometry. It concluded the detector's
+  brow landmarks were unusable. But a measurement reproduced to within 4% across twenty rendered
+  heads is not noise from a missing feature -- it is what this pipeline measures, on both sides of
+  the comparison, which is the exact condition the same file cites as making a rendered baseline
+  valid. The rule was written down and then not applied to these five.
+- **A centred estimate beats a cornered one.** irisSize and lipGap still fail the disagreement rule
+  and stay capped, but their old values sat at the extremes of the observed range. 0.115 against a
+  0.0707-0.1177 iris spread biased every single face toward a smaller iris; a large-irised source
+  exported -0.63, the wrong direction. Moving an unavoidable estimate to the measured median costs
+  nothing and removes a systematic bias.
+- **A fixed-topology landmark model always answers, including about things it cannot see.**
+  MediaPipe returns brow points for a brow behind a fringe and reports normal confidence. Trust has
+  to come from outside the model. Comparing forehead pixels to cheek pixels is crude next to the
+  mesh, and it is the only part of the pipeline that can tell whether there was a brow there at all.
+- **Read a corroborating signal the right way round.** The first version of the occlusion vote asked
+  whether the brow differed from skin. A real brow always does, so the vote was worth nothing and
+  scored a shadow identically to a fringe. The discriminating question is whether the brow and the
+  forehead are the same material.
+- **Make a false UI string as serious as a false value.** Two lines had been wrong for six releases:
+  an HPH calibration withdrawn in 0.18.0 that the footer still advertised, and "left at the neutral
+  default" printed beside sliders that were not at neutral. Neither changed an exported number and
+  both changed what the user believed the numbers meant. Sliders now carry `estimated` and `atLimit`
+  flags so a limiter-determined value cannot be read as a measurement.
+
 ## 0.24.0 - one measurement writes one family, and a guess does not get a vote (2026-08-06)
 
 - **Slider families are additive, not alternative.** EFM, CME, NSK and SPG are separate mods that

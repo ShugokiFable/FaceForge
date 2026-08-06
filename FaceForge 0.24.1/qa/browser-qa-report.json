@@ -1,0 +1,76 @@
+{
+  "title": "FaceForge",
+  "headingVisible": true,
+  "presetPackVisible": true,
+  "photoFirstVisible": true,
+  "animeModeVisible": true,
+  "raceGuidanceVisible": true,
+  "raceChoiceCount": 3,
+  "appearanceGuidanceVisible": true,
+  "symmetryIsQualityOnly": true,
+  "raceMenuHeadExportVisible": true,
+  "followerHeadKitVisible": true,
+  "dependencyIndexVisible": true,
+  "targetActorVisible": true,
+  "targetSexButtons": 2,
+  "targetRaceSelectVisible": true,
+  "appearanceCategoryTabs": 5,
+  "appearanceGateVisible": true,
+  "sliderInventoryVisible": true,
+  "presetReportVisible": true,
+  "inventoryStage": {
+    "available": true,
+    "headingCount": "108 values",
+    "familyChips": 7,
+    "writtenCount": 108,
+    "writtenFamilies": [
+      "CME",
+      "EFM",
+      "NSK",
+      "SPG"
+    ],
+    "wroteIndexSlider": false,
+    "wroteUninstalledSlider": false
+  },
+  "generatedFamilies": [
+    "EFM"
+  ],
+  "bakedHeadStepVisible": true,
+  "poseCorrectionVisible": true,
+  "poseReadouts": 4,
+  "poseValues": [
+    "−0.2°",
+    "1.5°",
+    "3.6°"
+  ],
+  "heldMeasurementsShown": 0,
+  "heldSliderFlags": 0,
+  "rotatedTiltDetected": 15.7,
+  "rotatedMaxSliderDelta": 0.12,
+  "rotatedMeanSliderDelta": 0.024126984126984136,
+  "smallFaceReframed": true,
+  "smallFaceMaxSliderDelta": 0.09000000000000008,
+  "smallFaceMeanSliderDelta": 0.02285714285714287,
+  "outputFormatVersion": 3,
+  "generatedEfmCount": 63,
+  "expectedGeneratedPresent": true,
+  "finiteGenerated": true,
+  "maxGenerated": 2.93,
+  "meanGenerated": 0.9861904761904767,
+  "pinnedGenerated": 0,
+  "sculptCleared": true,
+  "freshDependencies": true,
+  "freshHeadPartsEmpty": true,
+  "modelRequests": [
+    "http://localhost:4173/mediapipe/wasm//vision_wasm_internal.js",
+    "http://localhost:4173/mediapipe/wasm//vision_wasm_internal.wasm",
+    "http://localhost:4173/mediapipe/models/face_landmarker.task"
+  ],
+  "consoleErrors": [],
+  "consoleNotes": [
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU."
+  ],
+  "pageErrors": [],
+  "requestFailures": [],
+  "httpErrors": []
+}

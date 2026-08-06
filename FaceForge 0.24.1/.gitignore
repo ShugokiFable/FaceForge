@@ -1,0 +1,10 @@
+﻿src/FaceForge.Web/node_modules/
+src/FaceForge.Web/dist/
+src/FaceForge.Web/public/mediapipe/wasm/
+src/**/bin/
+src/**/obj/
+artifacts/
+TestResults/
+*.user
+*.suo
+**/FaceForge.WebBundle.zip

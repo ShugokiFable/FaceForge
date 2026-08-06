@@ -2,6 +2,87 @@
 # One living file.
 
 ================================================================================
+## [0.24.1] - 2026-08-06 - three baselines were measurable all along; the UI stops lying
+
+Agent: Claude
+Parent: FaceForge 0.24.0
+
+### The brow baselines are no longer guesses
+
+0.24.0 capped five estimated baselines because a guessed divisor is a multiplier. Three of
+those five did not need to be guesses at all -- the rendered measurements had been sitting in
+qa/race-calibration.json since 0.20.0, unused.
+
+0.19.0 declined to calibrate brow and iris against a render because Skyrim paints them on as
+textures, so the neutral head carries no brow and the detector's brow landmarks would be "a
+confidently wrong number". The premise is true. The conclusion does not follow, and 0.19.0's own
+acceptance test says so: reject a rendered value only when the heads disagree by more than half
+the mean. Across 20 rendered heads:
+
+    browWidth        4.0% spread   accept   guess 0.18   measured 0.3013   guess was 40% low
+    browThickness    8.5% spread   accept   guess 0.03   measured 0.0807   guess was 63% low
+    browHeight      24.3% spread   accept   guess 0.075  measured 0.1077   guess was 30% low
+    irisSize        51.2% spread   REJECT
+    lipGap         169.2% spread   REJECT
+
+A 4%-spread measurement reproduced across twenty heads is what this pipeline measures on both
+sides of the comparison, which is exactly the condition that makes a rendered baseline valid.
+Those three are now measured values at full authority.
+
+irisSize and lipGap genuinely fail the rule and stay estimated and capped, but their values moved
+to the measured median. Both had sat at the extreme of the observed range: irisSize 0.115 against
+a 0.0707-0.1177 spread biased every face toward a smaller iris, which is why a large-irised source
+exported EFM_Iris_Width -0.63 -- the wrong direction.
+
+On the export that started this:
+
+    EFM_Brow_Thickness   0.23.2: 2.93    0.24.0: 0.90 (capped)    0.24.1: -0.02
+    EFM_Brow_Height      0.23.2: 2.30    0.24.0: 0.90 (capped)    0.24.1:  0.80
+    EFM_Brow_Width       0.23.2: 2.43    0.24.0: 0.90 (capped)    0.24.1:  0.28
+    EFM_Iris_Width       0.23.2: -0.63   0.24.0: -0.55            0.24.1: +0.47
+
+0.24.0's three identical 0.90s were the limiter, not a measurement. These are measurements.
+
+### Forehead occlusion detection
+
+MediaPipe's mesh is fixed-topology: it returns brow landmarks whether or not a brow is visible,
+and reports normal confidence. Given a fringe it places them on hair. Nothing downstream could
+tell that from a real brow.
+
+New: FaceForge samples cheek, forehead and brow patches from the analysed frame and compares
+them. A forehead that does not match the cheeks beside it is covered, and the brow axes fade to
+neutral in proportion. The brow band corroborates, read the right way round -- the question is
+whether brow and forehead are the same material (a fringe covers both) rather than whether the
+brow differs from skin, which a real brow always does. A cast shadow, where the brow still reads
+as a distinct feature, is damped instead of trusted.
+
+Failure is safe in one direction only: a false positive costs the brow axes, a false negative
+leaves the previous behaviour. Returns no reading at all when pixels cannot be read.
+
+### Two statements the UI was making that were not true
+
+  - "High Poly Head calibration on (stronger EFM response + midface baselines)." Both were
+    withdrawn in 0.18.0 -- HPH_RESPONSE_GAIN has been identical to the standard gain and
+    HPH_BASELINE_FACTORS empty ever since. The line advertised them for six releases. It now
+    states what actually happens.
+  - "N measurements were unusable and left at the neutral default." The fade is
+    `baseline + (measured - baseline) * confidence`, so a measurement at 30% confidence still
+    exports 30% of its deviation. On the reported export this sentence named upper lip thickness
+    beside a slider reading 0.46. Truly-zeroed and partially-faded measurements are now reported
+    separately, and the per-slider "neutral" chip only appears when the value is neutral.
+
+### Also
+
+  - Sliders carry `estimated` and `atLimit` flags, shown as chips with an explanation on hover, so
+    a limiter-determined value can never again be read as a measurement.
+  - Tests: 100 frontend (18 new since 0.23.2), 96 native assertions. TypeScript clean, .NET
+    Release clean, 0 warnings.
+
+RUNTIME STATUS: tool-validated. Values are computed from the shipped formula against rendered
+calibration data; the in-game result has not been confirmed by the user.
+
+
+================================================================================
 ## [0.24.0] - 2026-08-06 - one measurement, one slider; guessed baselines lose their authority
 
 Agent: Claude

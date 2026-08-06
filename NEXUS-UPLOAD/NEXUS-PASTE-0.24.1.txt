@@ -1,0 +1,75 @@
+FaceForge 0.24.1 — Nexus upload sheet
+=====================================
+
+UPLOAD THIS FILE
+  NEXUS-UPLOAD\FaceForge-0.24.1-STANDALONE.zip
+  119,120,427 bytes
+  SHA-256: 413E1BF2220B3673D7B72097D96B768B166056AB4610E564B44B713E3A1347A4
+  Contains: FaceForge-0.24.1-STANDALONE.exe + README.md   (nothing else)
+
+Version field:        0.24.1
+Update type:          Bug fix
+Main file:            yes
+0.23.1 on the page:   remove it, or mark it obsolete.
+0.23.2 / 0.24.0:      never published. Do not upload either.
+
+
+-------------------------------------------------------------------------------
+CHANGELOG — paste into the Nexus "Changelog" box
+-------------------------------------------------------------------------------
+
+0.24.1 - Accurate brows, and an app that stops overstating what it knows
+
+Every version before this one over-shaped exported faces, worst of all around the
+brows. Three separate causes, all fixed.
+
+- Fixed: the same measurement was written into every slider family that offered it.
+  EFM, CME, NSK and SPG are separate mods with separate morphs, and RaceMenu adds
+  them all together, so one measured brow height was applied up to four times.
+  FaceForge now writes each measurement once, into the best family your install has.
+- Fixed: the brow reference values were guesses, and they were badly wrong - 30%,
+  40% and 63% below what the reference head actually measures. Because the reference
+  is a divisor, that did not shift the result slightly; it threw the brow sliders to
+  the end of their range on every face. Real measurements from 20 rendered heads are
+  now used instead. On the preset that exposed this, brow thickness went from 2.93
+  (of a 3.00 maximum) to -0.02.
+- New: FaceForge now notices when hair covers the forehead. The landmark model
+  returns eyebrow positions whether or not your eyebrows are visible, so a fringe
+  used to be measured as a very high, very thick brow. Those measurements are now
+  distrusted instead, and the app tells you it did that.
+- The iris and lip-gap references still cannot be measured reliably, so they stay
+  estimates - but they are now centred instead of sitting at the edge of the range,
+  which was making every face read as having a smaller iris than it has. Sliders
+  built on an estimate are labelled "estimated" in the UI.
+
+Also removed two things the app was telling you that were not true: a High Poly Head
+calibration it claimed to apply but withdrew six versions ago, and "left at the
+neutral default" printed next to sliders that were not at neutral.
+
+If your install has several slider mods, FaceForge now reports writing fewer sliders
+than it can see. That is the first fix, not a limitation - the skipped ones are
+duplicates of sliders it already wrote, and the panel explains which.
+
+Re-export any preset made with an earlier version.
+
+
+-------------------------------------------------------------------------------
+SHORT VERSION — for the file description box
+-------------------------------------------------------------------------------
+
+Accuracy release. Earlier versions wrote each measurement into several slider mods at
+once (RaceMenu adds them together) and used badly wrong reference values for the brows,
+so faces came out over-shaped. Both fixed with measured data, plus new detection for
+hair covering the forehead. Re-export any preset made with an older build. Windows tool:
+unzip anywhere and run the EXE, do not install into Skyrim Data / Vortex / MO2.
+
+
+-------------------------------------------------------------------------------
+PINNED COMMENT / STICKY — optional
+-------------------------------------------------------------------------------
+
+If a preset you exported looked heavier or more exaggerated in game than the photo you
+gave it - especially the eyebrows - that was FaceForge, not your setup. It was applying
+each measurement several times over, and its eyebrow reference values were 30-63% off.
+0.24.1 fixes both against measured data. Re-export and it should read much closer to
+the source.

@@ -1,11 +1,11 @@
 # FaceForge state
 
-- Active version: `FaceForge 0.24.0` (parent 0.23.2), tool-validated release.
-- Final EXE: `FaceForge-0.24.0-STANDALONE.exe`, 125,966,822 bytes.
-- SHA-256: `D894A4022D9F530E04CF0BE12151EDAA43EC66592184B9EA27A5A25ADF1477A2`.
-- FileVersion 0.24.0.0.
-- Tests: 82 frontend (10 new), 96 native assertions. TypeScript clean, .NET Release clean, 0 warnings.
-- Product version: `0.24.0`; public distribution remains exactly one self-contained EXE.
+- Active version: `FaceForge 0.24.1` (parent 0.24.0), tool-validated release.
+- Final EXE: `FaceForge-0.24.1-STANDALONE.exe`, 125,974,779 bytes.
+- SHA-256: `61D0399A7B6D86E64EB4707E93239A0EC385F78A61C003DB4D4AF58F85E9C7FD`.
+- FileVersion 0.24.1.0; launch verified (still running after 12s, then stopped).
+- Tests: 100 frontend (18 new since 0.23.2), 96 native assertions. TypeScript clean, .NET Release clean, 0 warnings.
+- Product version: `0.24.1`; public distribution remains exactly one self-contained EXE.
 
 ## What changed
 
@@ -37,6 +37,20 @@ divides degrees rather than a baseline and is excluded.
 Net on the reported preset: EFM_Brow_Height 2.30 -> 0.90, EFM_Brow_Width 2.43 -> 0.90,
 EFM_Brow_Thickness 2.93 -> 0.90, EFM_Oral_Height -2.16 -> -0.90, nine duplicate sliders dropped,
 and everything on a measured baseline (jaw, nose, cheeks, mouth width) unchanged.
+
+**0.24.1 then removed three of the five guesses entirely.** The rendered numbers had been in
+`qa/race-calibration.json` since 0.20.0 and pass 0.19.0's own acceptance rule (reject only when the
+heads disagree by more than half the mean): browWidth 4.0% spread, browThickness 8.5%, browHeight
+24.3%. The guesses they replace were 40%, 63% and 30% low. Only irisSize (51.2%) and lipGap (169.2%)
+genuinely fail the rule; they stay estimated and capped, with their values moved to the measured
+median so they no longer sit at the extreme of the observed range. The three 0.90s above become
+0.80, 0.28 and -0.02 -- measurements rather than the limiter.
+
+**0.24.1 also detects a covered forehead.** MediaPipe returns brow landmarks whether or not a brow
+is visible, so a fringe was being measured as a brow. FaceForge now compares cheek, forehead and
+brow patches from the analysed frame and fades the brow axes when the forehead is not skin. The
+brow band corroborates by material match with the forehead, not by difference from skin, so a cast
+shadow is damped rather than trusted.
 
 ## Measured on this installation, 2026-08-05
 
@@ -87,22 +101,27 @@ CharGen, and installed tools stayed read-only.
 
 ## Next useful work
 
-1. **Measure the five estimated baselines properly.** The 30% cap is a guard, not a calibration --
-   it bounds a wrong divisor rather than replacing it. The brow and iris baselines cannot come from
-   a render of the neutral head, so they need either a hand-authored-preset regression (fit the
-   baseline that puts the six MEMORY presets at their observed mean) or a rendered head wearing an
-   actual brow head-part. Until then the cap stands and those five axes are deliberately gentle.
-2. **Transfer EFM morphs to High Poly Head topology.** The morphs exist at 996 vertices and HPH is a
+1. **Calibrate irisSize and lipGap.** Three of the five were adopted in 0.24.1; these two fail the
+   disagreement rule and remain estimates on a cap. lipGap varies 169% across rendered heads because
+   a closed mouth's lip separation is near zero and noise dominates; irisSize varies 51% because two
+   of twenty heads are outliers (DarkElf male 0.0707, Elder male 0.1177) and the iris is a texture on
+   a sphere. Either needs a different reference than a neutral render -- a rendered head wearing a
+   real brow/eye head-part, or a photo corpus -- not another guess.
+2. **Validate occlusion detection against real photos.** The thresholds (0.10 skin variation, 0.22
+   occluder distance) are set from the pale-skin/brown-fringe case that prompted it and from the
+   fact that a false positive is cheap. They have not been swept over a range of skin tones,
+   lighting, or head coverings. This is the highest-value next measurement.
+3. **Transfer EFM morphs to High Poly Head topology.** The morphs exist at 996 vertices and HPH is a
    subdivision of the same head with the same UVs, so a barycentric transfer would make ~51 sliders
    live again rather than merely honest. This is the single largest remaining fidelity gain and it
    is bounded work; it needs its own version and a render-and-measure check.
-3. **Read slider inis out of BSAs.** ECE Sliders for Racemenu ships its `morphs.ini`/`races.ini`
+4. **Read slider inis out of BSAs.** ECE Sliders for Racemenu ships its `morphs.ini`/`races.ini`
    inside a BSA, so its CME/SPG sliders are invisible to the registry and fall through to the
    permissive path. BSArch cannot unpack that archive (it lists but extracts nothing), so this needs
    a BSA reader rather than a shell-out.
-4. Calibrate the reliability thresholds against a small real-photo set, especially turned faces; the
+5. Calibrate the reliability thresholds against a small real-photo set, especially turned faces; the
    current 12% asymmetry and 180-pair gates deliberately catch the known 26% / 155-pair defect.
-5. The diagnostic preview draws `correctedLandmarks`, which mirror-averaging only symmetrises for
+6. The diagnostic preview draws `correctedLandmarks`, which mirror-averaging only symmetrises for
    paired points — 155 of 478 on the known turned photo — so the contour ring alternates between
    symmetrised and raw points and reads as a sawtooth. Cosmetic; measurements are unaffected because
    the measurement landmarks are always paired.

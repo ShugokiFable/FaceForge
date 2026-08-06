@@ -1,4 +1,4 @@
-# FaceForge 0.24.0 — Windows tool (not a Skyrim mod)
+# FaceForge 0.24.1 — Windows tool (not a Skyrim mod)
 
 **This is a Windows application.** It is **not** a Skyrim plugin, not an SKSE DLL, and
 **must not** be installed into Skyrim `Data`, Vortex, or Mod Organizer 2 as a game mod.
@@ -12,7 +12,7 @@ the face in RaceMenu in-game. For a full NPC follower afterward, use **FollowerF
 
 | File | What it is |
 |------|------------|
-| `FaceForge-0.24.0-STANDALONE.exe` | The whole tool (double-click to run) |
+| `FaceForge-0.24.1-STANDALONE.exe` | The whole tool (double-click to run) |
 | This `README.md` | How to use it |
 
 No .NET install. Needs **Windows 10/11** with **Microsoft Edge WebView2** (usually already installed).
@@ -22,7 +22,7 @@ No .NET install. Needs **Windows 10/11** with **Microsoft Edge WebView2** (usual
 ## How to install the TOOL (not the game)
 
 1. Unzip this download **anywhere on your PC** (Desktop, Documents, Tools folder, etc.).
-2. Double-click **`FaceForge-0.24.0-STANDALONE.exe`**.
+2. Double-click **`FaceForge-0.24.1-STANDALONE.exe`**.
 3. **Do not** drop the EXE into `Skyrim Special Edition\Data`.
 4. **Do not** add this zip as a Vortex/MO2 mod for Skyrim.
 
@@ -70,7 +70,7 @@ FaceForge only **reads** your game/Vortex/CharGen folders. It does not change yo
 **FaceForge** (face preset) → RaceMenu bake → **FollowerForge** (NPC plugin).
 
 GitHub: https://github.com/ShugokiFable/FaceForge  
-Release: https://github.com/ShugokiFable/FaceForge/releases/tag/v0.24.0
+Release: https://github.com/ShugokiFable/FaceForge/releases/tag/v0.24.1
 
 ---
-Developers: ship tree is `FaceForge 0.24.0\`. See CURRENT.txt, build.ps1, package.ps1.
+Developers: ship tree is `FaceForge 0.24.1\`. See CURRENT.txt, build.ps1, package.ps1.

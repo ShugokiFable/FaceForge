@@ -1,0 +1,17 @@
+FaceForge 0.24.1
+
+Parent: FaceForge 0.24.0
+- Calibrated three brow baselines that had been guesses since 0.19.0. The rendered
+  numbers were already in qa/race-calibration.json and pass the project's own
+  acceptance rule; the guesses were 30%, 40% and 63% low.
+- Added forehead-occlusion detection, so brow measurements taken off a fringe are
+  distrusted instead of exported.
+- Removed two false statements from the UI (a withdrawn HPH calibration it still
+  advertised, and "left at the neutral default" printed over non-neutral values).
+
+Final ZIP: FaceForge-0.24.1-STANDALONE.zip
+Bytes: 119120427
+SHA-256: 413E1BF2220B3673D7B72097D96B768B166056AB4610E564B44B713E3A1347A4
+EXE: FaceForge-0.24.1-STANDALONE.exe
+EXE bytes: 125974779
+EXE SHA-256: 61D0399A7B6D86E64EB4707E93239A0EC385F78A61C003DB4D4AF58F85E9C7FD

@@ -1,11 +1,13 @@
-Upload only: FaceForge-0.24.0-STANDALONE.zip
-Size: 119121339
-SHA-256: E0F1F257F2BD09681252FEA1886DA150565EEA83FA050082D2857B1F96342937
-EXE alone (root): FaceForge-0.24.0-STANDALONE.exe
-EXE SHA-256: D894A4022D9F530E04CF0BE12151EDAA43EC66592184B9EA27A5A25ADF1477A2
-Paste text: NEXUS-PASTE-0.24.0.txt
+Upload only: FaceForge-0.24.1-STANDALONE.zip
+Size: 119120427
+SHA-256: 413E1BF2220B3673D7B72097D96B768B166056AB4610E564B44B713E3A1347A4
+EXE alone (root): FaceForge-0.24.1-STANDALONE.exe
+EXE bytes: 125974779
+EXE SHA-256: 61D0399A7B6D86E64EB4707E93239A0EC385F78A61C003DB4D4AF58F85E9C7FD
+Paste text: NEXUS-PASTE-0.24.1.txt
 
-DO NOT UPLOAD FaceForge-0.23.2-STANDALONE.zip.
-It was staged on 2026-08-06 and superseded the same day, before it was ever published.
-It still writes every measurement into 2-4 slider families at once and lets the
-estimated brow/iris baselines saturate. Kept only as build history; delete it freely.
+DO NOT UPLOAD the older zips in this folder. None of them were ever published.
+  0.23.2 - writes every measurement into 2-4 slider families at once.
+  0.24.0 - fixes that, but three brow baselines are still guesses that pin the
+           brow sliders against their cap on every face.
+Kept as build history only; delete them freely.
