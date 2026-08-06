@@ -2,11 +2,11 @@
 
 | | |
 |--|--|
-| **Version** | 0.23.2 (hotfix — supersedes 0.23.1) |
-| **Upload** | `NEXUS-UPLOAD\FaceForge-0.23.2-STANDALONE.zip` |
-| **Size** | 119117953 bytes |
-| **SHA-256** | `3FE09DFED18BCCE52EEBF676E5D5DCE1059D3CFD7738C5C769C2FF7FFD64D6B1` |
-| **Inside** | EXE + README.md |
-| **GitHub** | https://github.com/ShugokiFable/FaceForge/releases/tag/v0.23.2 |
+| **Version** | 0.24.0 |
+| **Upload** | `NEXUS-UPLOAD\FaceForge-0.24.0-STANDALONE.zip` |
+| **Size** | 119121339 bytes |
+| **SHA-256** | `E0F1F257F2BD09681252FEA1886DA150565EEA83FA050082D2857B1F96342937` |
+| **GitHub** | https://github.com/ShugokiFable/FaceForge/releases/tag/v0.24.0 |
 
-Paste text from `NEXUS-UPLOAD\NEXUS-PASTE-0.23.2.txt`.
+Paste from `NEXUS-UPLOAD\NEXUS-PASTE-0.24.0.txt`.
+Do **not** upload 0.23.2 as main (superseded; never needed if 0.24.0 is the page file).

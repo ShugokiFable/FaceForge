@@ -1,0 +1,68 @@
+FaceForge 0.24.0 — Nexus upload sheet
+=====================================
+
+UPLOAD THIS FILE
+  NEXUS-UPLOAD\FaceForge-0.24.0-STANDALONE.zip
+  119,121,339 bytes
+  SHA-256: E0F1F257F2BD09681252FEA1886DA150565EEA83FA050082D2857B1F96342937
+  Contains: FaceForge-0.24.0-STANDALONE.exe + README.md   (nothing else)
+
+Version field:        0.24.0
+Update type:          Bug fix
+Main file:            yes
+0.23.1 on the page:   remove it, or mark it obsolete.
+0.23.2:               do NOT upload. It was built but never published, and it still
+                      carries the two defects fixed here.
+
+
+-------------------------------------------------------------------------------
+CHANGELOG — paste into the Nexus "Changelog" box
+-------------------------------------------------------------------------------
+
+0.24.0 - Faces come out shaped, not over-shaped
+
+Two long-standing bugs made exported presets look coarse and exaggerated in game -
+strongest on the brows, which came out as thick flat slabs.
+
+- Fixed: the same measurement was written into every slider family that offered it.
+  EFM, CME, NSK and SPG are separate mods with separate morphs, and RaceMenu adds
+  them all together, so one measured brow height was applied up to four times.
+  FaceForge now writes each measurement once, into the best family your install
+  actually has.
+- Fixed: the brow, iris and lip-gap reference values are estimates, not measurements
+  (Skyrim's brows and irises are textures painted on plain geometry, so there is no
+  brow on the reference head to measure). They were being used as if they were
+  measured, which pushed those sliders to the end of their range on every face.
+  They now keep their direction but no longer sculpt at full strength.
+
+Everything driven by a properly measured reference - jaw, nose, cheeks, chin, mouth
+width - is unchanged. Only the over-applied axes were pulled back.
+
+If your install has several slider mods, FaceForge will now report writing fewer
+sliders than it can see. That is the fix, not a limitation: the ones it skips are
+duplicates of ones it already wrote, and the panel explains which.
+
+Re-export any preset made with an earlier version, especially if you loaded a
+slider inventory.
+
+
+-------------------------------------------------------------------------------
+SHORT VERSION — for the file description box
+-------------------------------------------------------------------------------
+
+Bug fix. Earlier versions wrote each facial measurement into several slider mods at
+once and RaceMenu added them all together, so faces came out over-shaped - brows
+worst of all. Fixed, along with brow/iris reference values that were estimates being
+used as measurements. Re-export any preset made with an older build. Windows tool:
+unzip anywhere and run the EXE, do not install into Skyrim Data / Vortex / MO2.
+
+
+-------------------------------------------------------------------------------
+PINNED COMMENT / STICKY — optional
+-------------------------------------------------------------------------------
+
+If you exported a preset with any version before 0.24.0 and it looked heavier or
+more exaggerated in game than the photo you fed it - especially around the brows -
+that was FaceForge, not your setup. It was writing the same measurement into EFM,
+CME, NSK and SPG at the same time, and RaceMenu sums them. 0.24.0 writes each one
+once. Re-export and it should read much closer to the source.

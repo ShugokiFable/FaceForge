@@ -1,35 +1,42 @@
 # FaceForge state
 
-- Active version: `FaceForge 0.23.0` (parent 0.22.0), tool-validated release.
-- Final EXE: `FaceForge 0.23.0 - STANDALONE.exe`, 125,958,832 bytes.
-- SHA-256: `E13C9B656C418C4086F4894F244AB3A3514ACE999B799996C64CE89E7CF77507`.
-- FileVersion 0.23.0.0; isolated launch verified (still running after 12s, then stopped).
-- Tests: 70 frontend (8 new), 92 native assertions (10 new). TypeScript clean, .NET Release clean.
-- Product version: `0.23.0`; public distribution remains exactly one self-contained EXE.
+- Active version: `FaceForge 0.24.0` (parent 0.23.2), tool-validated release.
+- Final EXE: `FaceForge-0.24.0-STANDALONE.exe`, 125,966,822 bytes.
+- SHA-256: `D894A4022D9F530E04CF0BE12151EDAA43EC66592184B9EA27A5A25ADF1477A2`.
+- FileVersion 0.24.0.0.
+- Tests: 82 frontend (10 new), 96 native assertions. TypeScript clean, .NET Release clean, 0 warnings.
+- Product version: `0.24.0`; public distribution remains exactly one self-contained EXE.
 
 ## What changed
 
-FaceForge no longer writes sliders the target head cannot move.
+FaceForge stops applying the same measurement several times, and stops letting a guessed baseline
+sculpt at full strength. Both defects predate 0.23.x; both were found from a preset the user
+exported and loaded in game, which came out flat with enormous flat brows.
 
-A RaceMenu slider is a name in an ini pointing at a pair of named vertex morphs. It appears in the
-menu whenever some `races.ini` registers it, and it changes the face only when those morphs exist in
-a `.tri` whose vertex count matches the mesh the character wears. Those two conditions are
-independent, and FaceForge was only ever checking the first — by way of a slider inventory read out
-of a user-supplied preset, which lists every registered slider whether it works or not.
+**One measurement, one family.** EFM, CME, NSK and SPG are separate mods registering separate morph
+targets, and RaceMenu sums every registered morph onto the head. 31 of 39 measurements were being
+written into 2-3 families at once, so the same displacement landed on the face two to four times.
+Confirmed on this install: EFM's `human.ini` maps `EFM_Jaw_Width` to `EFM_Jaw_Narrow`/`EFM_Jaw_Wide`,
+while the vanilla `FemaleHeadChargen.tri` behind RaceMenu's `CME_JawWidth` carries
+`JawNarrow`/`JawWide` and holds no `EFM_`-prefixed morph at all. Each measurement now writes only the
+highest-priority family the install offers and the head can move; a single family's own fan-out is
+left alone.
 
-`FaceForge.Core/MorphRegistry` now reads the installation directly:
-`meshes\actors\character\facegenmorphs\<Plugin>\morphs.ini` (extension registrations),
-`races.ini` (which slider set each race gets), `sliders\*.ini` (the morph pair behind each slider),
-and every chargen `.tri` the character wears — head, brows, eyes, mouth. An extension whose vertex
-count does not match the part it claims to extend contributes nothing and is reported as rejected.
+Only fires when a slider inventory is loaded — without one FaceForge writes EFM alone, which is why
+exports made before loading an inventory were unaffected.
 
-Sliders that come out inert are left out of the preset instead of written as dead keys, and the
-analysis notice says how many were dropped and why.
+**Guessed baselines are capped.** A baseline is a divisor, so a small wrong one is a multiplier, not
+a bias. On the reported export every *measured* baseline put the face within 10% of neutral
+(nose -7%, jaw -10%) while every *guessed* one threw it to the end of the range (brow height +70%,
+brow width +78%, brow thickness +168%). 0.19.0 was right to refuse to calibrate these against a
+render — Skyrim's brows and irises are textures, so the neutral head has no brow geometry — but the
+estimate was still handed a measurement's authority. `browHeight`, `browWidth`, `browThickness`,
+`irisSize` and `lipGap` now keep direction and ordering but cap at 30% of family range. `browAngle`
+divides degrees rather than a baseline and is excluded.
 
-**The rule only ever subtracts.** A slider the registry has never heard of keeps whatever the
-inventory decided. The registry reads loose files, so a slider ini inside a BSA is invisible to it —
-treating "not found" as "inert" would silently delete working sliders, which is worse than the
-defect being fixed. There is a test pinning that.
+Net on the reported preset: EFM_Brow_Height 2.30 -> 0.90, EFM_Brow_Width 2.43 -> 0.90,
+EFM_Brow_Thickness 2.93 -> 0.90, EFM_Oral_Height -2.16 -> -0.90, nine duplicate sliders dropped,
+and everything on a measured baseline (jaw, nose, cheeks, mouth width) unchanged.
 
 ## Measured on this installation, 2026-08-05
 
@@ -71,24 +78,31 @@ Reproduce: `dotnet run --project src/FaceForge.Core.Tests -- --morphs "<Data>" N
 
 ## Runtime boundary
 
-No runtime confirmation. The slider-liveness finding is measured from installed files, not observed
-in game; the natural user-side test is to load a 0.23.0 preset on an HPH character and confirm the
-face is no worse than 0.22.0's despite carrying ~50 fewer keys. SSEEdit, xEdit, and Creation Kit
-were not launched. Skyrim Data, Vortex staging, CharGen, and installed tools stayed read-only.
+No runtime confirmation of 0.24.0. The before/after values are computed from the shipped formula and
+the defects are measured from installed files; neither is an in-game observation. The user-side test
+is to re-export the same photograph with 0.24.0 and load it on the same HPH character -- the brows
+should read as brows rather than as slabs, and the rest of the face should be recognisably the shape
+0.23.2 produced. SSEEdit, xEdit, and Creation Kit were not launched. Skyrim Data, Vortex staging,
+CharGen, and installed tools stayed read-only.
 
 ## Next useful work
 
-1. **Transfer EFM morphs to High Poly Head topology.** The morphs exist at 996 vertices and HPH is a
+1. **Measure the five estimated baselines properly.** The 30% cap is a guard, not a calibration --
+   it bounds a wrong divisor rather than replacing it. The brow and iris baselines cannot come from
+   a render of the neutral head, so they need either a hand-authored-preset regression (fit the
+   baseline that puts the six MEMORY presets at their observed mean) or a rendered head wearing an
+   actual brow head-part. Until then the cap stands and those five axes are deliberately gentle.
+2. **Transfer EFM morphs to High Poly Head topology.** The morphs exist at 996 vertices and HPH is a
    subdivision of the same head with the same UVs, so a barycentric transfer would make ~51 sliders
    live again rather than merely honest. This is the single largest remaining fidelity gain and it
    is bounded work; it needs its own version and a render-and-measure check.
-2. **Read slider inis out of BSAs.** ECE Sliders for Racemenu ships its `morphs.ini`/`races.ini`
+3. **Read slider inis out of BSAs.** ECE Sliders for Racemenu ships its `morphs.ini`/`races.ini`
    inside a BSA, so its CME/SPG sliders are invisible to the registry and fall through to the
    permissive path. BSArch cannot unpack that archive (it lists but extracts nothing), so this needs
    a BSA reader rather than a shell-out.
-3. Calibrate the reliability thresholds against a small real-photo set, especially turned faces; the
+4. Calibrate the reliability thresholds against a small real-photo set, especially turned faces; the
    current 12% asymmetry and 180-pair gates deliberately catch the known 26% / 155-pair defect.
-4. The diagnostic preview draws `correctedLandmarks`, which mirror-averaging only symmetrises for
+5. The diagnostic preview draws `correctedLandmarks`, which mirror-averaging only symmetrises for
    paired points — 155 of 478 on the known turned photo — so the contour ring alternates between
    symmetrised and raw points and reads as a sawtooth. Cosmetic; measurements are unaffected because
    the measurement landmarks are always paired.

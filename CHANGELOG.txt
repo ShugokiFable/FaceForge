@@ -2,6 +2,99 @@
 # One living file.
 
 ================================================================================
+## [0.24.0] - 2026-08-06 - one measurement, one slider; guessed baselines lose their authority
+
+Agent: Claude
+Parent: FaceForge 0.23.2
+
+**User-reported: an exported preset looked completely wrong in game -- flat, with enormous
+flat brows dominating the face.** Two independent defects, both older than 0.23.x and both
+confirmed against files on this install rather than inferred.
+
+### 1. One measurement was written into every slider family that offered it
+
+EFM, CME, NSK and SPG are separate mods that register separate morph targets, and RaceMenu sums
+every registered morph onto the head. Writing one measurement into several families does not
+describe the face more precisely -- it applies the same displacement two to four times.
+
+Verified, not assumed:
+  - `Expressive Facegen Morphs.esl\sliders\human.ini` registers
+    `EFM_Jaw_Width = 16, Slider, EFM_Jaw_Narrow, EFM_Jaw_Wide`.
+  - The vanilla `FemaleHeadChargen.tri` that RaceMenu's own `CME_JawWidth` drives carries
+    `JawNarrow`/`JawWide` and contains no `EFM_`-prefixed morph at all.
+  Two disjoint targets. Both applied.
+
+31 of FaceForge's 39 measurements drove 2-3 families. In the reported preset one measured brow
+height was written as EFM_Brow_Height 2.30, CME_BrowUpDown 0.99, SPG_ECEBrowInnerHeight 0.99 and
+SPG_ECEBrowOuterHeight 0.98 -- three of the four at 98-99% of their travel.
+
+Fixed: each measurement now writes only the highest-priority family the install actually offers
+and the head can actually move (EFM > CME > SPG > NSK > RANs > ECE). A family's own fan-out is
+untouched -- EFM_Nose_Width, EFM_Nose_Wing_Width and EFM_Nose_Wing_Thickness are three pieces of
+anatomy an author moves together, not three copies of one value.
+
+This defect shipped from 0.6.0 through 0.23.2, but only fires when a slider inventory is loaded.
+Without one FaceForge writes EFM alone, which is why exports made before loading an inventory
+("0.22.0 looked better") were not affected.
+
+### 2. Estimated baselines were given full-range authority
+
+A baseline is a divisor: `(measured / baseline - 1) * sensitivity * gain`. When the divisor is
+small and wrong, the error is not a bias, it is a multiplier. From the same export:
+
+    EFM_Nose_Width      -0.45    -7% off baseline    baseline measured
+    EFM_Jaw_Width       -0.58   -10% off baseline    baseline measured
+    EFM_Brow_Height      2.30   +70% off baseline    baseline GUESSED (0.075)
+    EFM_Brow_Width       2.43   +78% off baseline    baseline GUESSED (0.18)
+    EFM_Brow_Thickness   2.93  +168% off baseline    baseline GUESSED (0.03)
+
+Every measured baseline lands a normal face within 10% of neutral. Every guessed one throws it to
+the end of the range -- for any photograph, because 0.03 is simply not what a brow measures. The
+saturation curve then hid it: 2.93 looks like a strong reading rather than a raw 6.66 folded over.
+
+0.19.0 correctly refused to calibrate these five against a render (Skyrim paints brows and irises
+on as textures, so the neutral head has no brow geometry to measure, and calibrating against the
+landmarks the detector returns anyway would "trade a guess for a confidently wrong number"). What
+was missed is that the estimate was still handed the same authority as a measurement.
+
+Fixed: `browHeight`, `browWidth`, `browThickness`, `irisSize` and `lipGap` keep their direction and
+their ordering between faces, and are capped at 30% of their family range -- near the mean |value|
+of hand-authored presets rather than at their ceiling. `browAngle` is estimated too but divides
+degrees instead of a baseline, so it cannot be distorted by one and is deliberately excluded.
+
+### Net effect on the reported preset
+
+    slider                    0.23.2    0.24.0
+    EFM_Brow_Height             2.30      0.90   capped
+    CME_BrowUpDown              0.99        --   duplicate
+    SPG_ECEBrowInnerHeight      0.99        --   duplicate
+    SPG_ECEBrowOuterHeight      0.98        --   duplicate
+    EFM_Brow_Width              2.43      0.90   capped
+    CME_BrowInOut               1.00        --   duplicate
+    SPG_ECEBrowInnerWidth       0.99        --   duplicate
+    SPG_ECEBrowOuterWidth       0.99        --   duplicate
+    EFM_Brow_Thickness          2.93      0.90   capped
+    EFM_Oral_Height            -2.16     -0.90   capped
+    EFM_Jaw_Width              -0.58     -0.58   unchanged (measured baseline)
+    CME_JawWidth               -0.47        --   duplicate
+
+Everything driven by a measured baseline is unchanged. Only the guessed axes are pulled back, and
+only the duplicates are removed.
+
+### Also
+
+  - The slider-inventory panel now explains a written count lower than the matched count, so a
+    smaller number reads as duplicate suppression rather than as the 0.23.0 defect returning.
+  - New: `oneFamilyPerMeasurement`, `supersededDefinitions`, `FAMILY_PRIORITY` in sliderCatalog;
+    `ESTIMATED_BASELINES`, `ESTIMATED_BASELINE_AUTHORITY` in faceAnalysis.
+  - Tests: 82 frontend (10 new), 96 native assertions. TypeScript clean, .NET Release clean,
+    0 warnings.
+
+RUNTIME STATUS: tool-validated. The arithmetic above is computed from the shipped formula; the
+in-game result of a 0.24.0 export has not yet been confirmed by the user.
+
+
+================================================================================
 ## [0.23.2] - 2026-08-06 - correction: 0.23.0's slider gate was wrong
 
 Agent: Claude

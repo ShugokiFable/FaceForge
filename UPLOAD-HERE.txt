@@ -1,8 +1,6 @@
-Nexus upload:
-  NEXUS-UPLOAD\FaceForge-0.23.1-STANDALONE.zip
+Nexus / GitHub upload:
+  NEXUS-UPLOAD\FaceForge-0.24.0-STANDALONE.zip
 
-Zip contains for users:
-  FaceForge-0.23.1-STANDALONE.exe
-  README.md   (tool, not a mod — how to run)
-
-Page text: NEXUS-RELEASE.md
+Size: 119121339
+SHA-256: E0F1F257F2BD09681252FEA1886DA150565EEA83FA050082D2857B1F96342937
+CURRENT: FaceForge 0.24.0

@@ -1,5 +1,38 @@
 # Decisions
 
+## 0.24.0 - one measurement writes one family, and a guess does not get a vote (2026-08-06)
+
+- **Slider families are additive, not alternative.** EFM, CME, NSK and SPG are separate mods that
+  register separate morph targets, and RaceMenu sums every registered morph onto the head. Writing
+  one measurement into several families applies the same displacement two to four times. Confirmed
+  on this install rather than assumed: `Expressive Facegen Morphs.esl\sliders\human.ini` maps
+  `EFM_Jaw_Width` to `EFM_Jaw_Narrow`/`EFM_Jaw_Wide`, and the vanilla `FemaleHeadChargen.tri` behind
+  RaceMenu's own `CME_JawWidth` carries `JawNarrow`/`JawWide` with no `EFM_`-prefixed morph anywhere
+  in it. FaceForge now writes the highest-priority family the install offers and the head can move,
+  and only that one.
+- **The collapse is across families, never inside one.** `EFM_Nose_Width`, `EFM_Nose_Wing_Width` and
+  `EFM_Nose_Wing_Thickness` are three pieces of anatomy an author moves together. Removing two of
+  them would repeat the 0.23.0 mistake -- dropping working sliders on a theory -- in a new costume.
+- **A more capable-looking export was the bug.** Loading a slider inventory reported "writes 108 of
+  the 108 sliders it can measure" and read as FaceForge using more of the install. It was writing
+  the same face four times. Slider count is not a quality metric, and the UI now says so when the
+  written count falls below the matched count.
+- **A baseline is a divisor, so a guessed baseline is a multiplier.** Every *measured* baseline put
+  the reported face inside 10% of neutral; every *guessed* one threw it to the end of the range
+  (brow thickness +168% against a guessed 0.03). The saturation curve hid it -- 2.93 of 3.00 looks
+  like a strong reading rather than a raw 6.66 folded over.
+- **The fix is less authority, not a better guess.** 0.19.0 was right that these five cannot be
+  calibrated against a render: Skyrim paints brows and irises on as textures, so the neutral head
+  has no brow geometry, and calibrating against the landmarks the detector returns anyway would
+  trade a guess for a confidently wrong number. That reasoning was sound and the estimates stayed.
+  What was missed is that an estimate was still handed a measurement's full range. `browHeight`,
+  `browWidth`, `browThickness`, `irisSize` and `lipGap` now keep direction and ordering and cap at
+  30% of family range. `browAngle` divides degrees instead of a baseline and is excluded, because
+  the defect is specific to the ratio path.
+- **Superseded is not inert.** Two different reasons a slider goes unwritten -- "this head cannot
+  move it" and "another family already carries it" -- are reported separately. Collapsing them
+  would make the next slider-count drop unreadable, which is exactly what made 0.23.0 hard to spot.
+
 ## 0.23.0 - a registered slider is not a working slider (2026-08-05)
 
 - **Liveness is proven from geometry, not from the plugin list.** A RaceMenu slider appears
