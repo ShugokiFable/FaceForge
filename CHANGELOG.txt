@@ -1,7 +1,47 @@
 # CHANGELOG — FaceForge
 # One living file.
 
-# CHANGELOG — FaceForge
+================================================================================
+## [0.23.2] - 2026-08-06 - correction: 0.23.0's slider gate was wrong
+
+Agent: Claude
+Parent: FaceForge 0.23.1
+
+**0.23.0 and 0.23.1 dropped roughly 42 working sliders from every preset built on a
+High Poly Head character. This release stops that.** User-reported: presets after 0.23.0 read
+less accurate and more exaggerated than 0.22.0. They were right.
+
+Three separate mistakes, all in the 0.23.0 morph registry:
+
+  - **High Poly Head DOES ship EFM-compatible morphs**, contradicting what 0.23.0 measured
+    and wrote into the docs. HPH registers KL\femalehead_efm.tri -- with cme, ece, rans,
+    nuska, extra, expr and race -- from
+    meshes\actors\character\facegenmorphs\high poly head.esm\morphs.ini, which is packed
+    inside High Poly Head.bsa. Verified by parsing the archive directly.
+  - **A morphs.ini line registers one base mesh against MANY extensions**, comma-separated.
+    HPH puts nine on a single line. The 0.23.0 parser read the base and the first extension
+    only, discarding the rest even where the file was loose.
+  - **The registry read loose files only and still drew negative conclusions.** The 0.23.0
+    safeguard ("a slider the registry has never heard of keeps its prior treatment") protected
+    the wrong half: EFM's slider ini IS loose, so EFM sliders were judged against a morph set
+    missing everything the archives supply.
+
+Fixed:
+  - Added FaceForge.Core/BsaIndex: parses the folder table of every installed .bsa (v104/v105)
+    without extracting or decompressing, to detect archives that declare facegenmorphs content.
+  - MorphRegistrySnapshot now carries Complete + UnreadArchives. On this install Complete is
+    false and names 4 archives (High Poly Head, RaceMenu, ECE Sliders, AZ_HouseMaid).
+  - resolveMorphAvailability returns null on an incomplete registry, so nothing is dropped.
+    A partial view can prove a slider live; it can never prove one dead.
+  - morphs.ini parser reads every extension on a line.
+  - Reverted the wrong "correction" to hphCalibration's EFM note; the original text was right.
+
+Behaviour: slider output returns to the 0.22.0 set. The inert-slider notice no longer fires on
+this install.
+
+Tests: 72 frontend (2 new, pinning the regression), 96 native assertions (4 new).
+
+Nexus: YES -- supersedes 0.23.1, which should not stay up.
 
 ================================================================================
 ## [0.23.1] - 2026-08-05 - pair branding: FollowerForge
@@ -13,7 +53,12 @@ Changed:
   - Version ship 0.23.1.
 
 Nexus: YES
+
+================================================================================
 FaceForge 0.23.0 - 2026-08-05
+*** SUPERSEDED BY 0.23.2. The slider-liveness findings below are WRONG: the registry read
+*** loose files only and could not see High Poly Head's morph registrations inside its BSA.
+*** The "51 EFM sliders are inert on HPH" claim and the hphCalibration correction are retracted.
 
 - Started from a complete 0.22.0 snapshot.
 - Fixed the defect behind "the preset looks right on the player but flat on a follower built from

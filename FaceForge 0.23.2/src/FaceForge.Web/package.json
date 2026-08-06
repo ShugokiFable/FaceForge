@@ -1,0 +1,29 @@
+{
+  "name": "faceforge-web",
+  "private": true,
+  "version": "0.23.2",
+  "type": "module",
+  "scripts": {
+    "copy:mediapipe": "node scripts/copy-mediapipe.mjs",
+    "predev": "pnpm copy:mediapipe",
+    "dev": "vite --host 127.0.0.1",
+    "prebuild": "pnpm copy:mediapipe",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.35",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "typescript": "5.9.3",
+    "vite": "8.1.5",
+    "vitest": "4.0.18"
+  },
+  "packageManager": "pnpm@11.9.0"
+}

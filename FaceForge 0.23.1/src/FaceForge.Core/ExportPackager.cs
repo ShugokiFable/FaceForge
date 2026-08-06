@@ -251,8 +251,8 @@ public static class ExportPackager
         This is source material for follower authoring, not an install-ready follower.
         A follower still needs an NPC plugin plus plugin/FormID-bound FaceGeom and FaceTint paths.
 
-        The trio in FaceForge/Source is the head Skyrim already baked. To hand it to Follower
-        Forge, place the three files where FollowerForge scans:
+        The trio in FaceForge/Source is the head Skyrim already baked. To hand it to
+        FollowerForge, place the three files where FollowerForge scans:
            Data\SKSE\Plugins\CharGen\Presets\{name}.jslot
            Data\SKSE\Plugins\CharGen\{name}.nif
            Data\SKSE\Plugins\CharGen\{name}.dds
@@ -296,8 +296,8 @@ public static class ExportPackager
            and matches it to the preset by name, then builds the NPC plugin with race, voice,
            class, placement, equipment, spells, perks, and behavior.
 
-        Step 5 is the whole point of this stage. A JSlot on its own is not a head; Follower
-        Forge lists nothing until the matching NIF exists in that folder.
+        Step 5 is the whole point of this stage. A JSlot on its own is not a head;
+        FollowerForge lists nothing until the matching NIF exists in that folder.
         """;
 
     private static string SanitizeName(string value)

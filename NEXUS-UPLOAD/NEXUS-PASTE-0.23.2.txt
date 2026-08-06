@@ -1,0 +1,56 @@
+FaceForge 0.23.2 — Nexus upload sheet
+=====================================
+
+UPLOAD THIS FILE
+  NEXUS-UPLOAD\FaceForge-0.23.2-STANDALONE.zip
+  119,117,953 bytes
+  SHA-256: 3FE09DFED18BCCE52EEBF676E5D5DCE1059D3CFD7738C5C769C2FF7FFD64D6B1
+  Contains: FaceForge-0.23.2-STANDALONE.exe + README.md   (nothing else)
+
+Version field:        0.23.2
+Update type:          Hotfix
+Main file:            yes (replace 0.23.1)
+0.23.1 on the page:   remove it, or mark it obsolete. It has the defect below.
+
+
+-------------------------------------------------------------------------------
+CHANGELOG — paste into the Nexus "Changelog" box
+-------------------------------------------------------------------------------
+
+0.23.2 - Hotfix: restores sliders that 0.23.0 wrongly removed
+
+- Fixed: on High Poly Head setups, 0.23.0 and 0.23.1 silently dropped about 42
+  face sliders from every exported preset. Faces came out coarser and more
+  exaggerated than 0.22.0. Slider output is back to the full set.
+- Cause: FaceForge decides which sliders your head can actually move by reading
+  your installed morph files. It only read loose files, so it never saw that
+  High Poly Head registers its own EFM/CME/ECE/RANs morph set from a config
+  packed inside High Poly Head.bsa - and concluded those sliders were dead.
+- FaceForge now detects archives whose morph registrations it cannot read and
+  refuses to remove anything while any are present. It can confirm a slider
+  works; it will no longer guess that one does not.
+- Also fixed a config parser bug: a single registration line can list several
+  morph files, and only the first was being read.
+
+If you exported a preset with 0.23.0 or 0.23.1, re-export it with 0.23.2.
+
+
+-------------------------------------------------------------------------------
+SHORT VERSION — for the file description box
+-------------------------------------------------------------------------------
+
+Hotfix. 0.23.0/0.23.1 dropped ~42 face sliders from presets on High Poly Head
+setups, making faces coarser. Fixed - full slider output restored. Re-export any
+preset made with 0.23.0 or 0.23.1. Windows tool: unzip anywhere and run the EXE,
+do not install into Skyrim Data / Vortex / MO2.
+
+
+-------------------------------------------------------------------------------
+PINNED COMMENT / STICKY — optional, if 0.23.1 got downloads
+-------------------------------------------------------------------------------
+
+If you downloaded 0.23.0 or 0.23.1 and used High Poly Head, please grab 0.23.2
+and re-export. Those two builds removed around 42 sliders from each preset
+because FaceForge misread which morphs your setup supports. Nothing was written
+incorrectly into your game - the presets were just less detailed than they
+should have been. Sorry for the churn.

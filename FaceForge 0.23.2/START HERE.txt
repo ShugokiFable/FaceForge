@@ -1,0 +1,16 @@
+FACEFORGE 0.23.1
+
+TO OPEN:
+Double-click "FaceForge 0.23.1 - STANDALONE.exe".
+
+Use Quick Photo for one front image, or Guided Multi-View for front/left/right
+photos or a slow turn video.
+
+TO SHARE:
+Send that one EXE. The recipient does not need the source folder or a ZIP.
+
+Microsoft Edge WebView2 Runtime is required and is normally already installed
+on supported Windows 10 and Windows 11 systems.
+
+Optional ChatGPT, Claude, or Gemini subscription vision requires that provider's
+official CLI. FaceForge Settings opens the official install/sign-in flow.
