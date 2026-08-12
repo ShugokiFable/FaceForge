@@ -1,0 +1,75 @@
+FaceForge 0.24.3 — Nexus upload sheet
+=====================================
+
+UPLOAD THIS FILE
+  NEXUS-UPLOAD\FaceForge-0.24.3-STANDALONE.zip
+  119,141,039 bytes
+  SHA-256: 4B3B01A0D4868D92897E22EABB0057958F1F30D071ADD03A92CFF57D84596F05
+  Contains: FaceForge-0.24.3-STANDALONE.exe + README.md   (nothing else)
+
+Version field:        0.24.3
+Update type:          Bug fix
+Main file:            yes
+0.24.1 on the page:   remove it, or mark it obsolete.
+0.24.2:               never uploaded here. Do not upload it.
+
+
+-------------------------------------------------------------------------------
+CHANGELOG — paste into the Nexus "Changelog" box
+-------------------------------------------------------------------------------
+
+0.24.3 - Bug fixes from your reports
+
+All of these came from comments on this page. Nothing about how faces are measured changed,
+so a preset exported by 0.24.1 and one exported by 0.24.3 are identical.
+
+- Fixed: OpenRouter returned 404 for every model. This was FaceForge's fault, not your key
+  or your credits. It was asking OpenRouter for providers matching three requirements at
+  once, and no provider in the catalogue matched all three, for any model. An empty result
+  comes back as a 404, so the feature failed the same way for everyone. Fixed, and error
+  messages now show what OpenRouter actually said instead of telling you to check your key.
+- Fixed: the export button was unreachable on smaller screens. The window could not scroll,
+  so on a 1366x768 laptop - or any screen at 125% scaling - the bottom row was cut off with
+  no way to get to it. It scrolls now.
+- Fixed: launching through Mod Organizer 2 showed a bare "could not initialize webview2".
+  FaceForge is a Windows tool, not a mod, and it does not need to run inside MO2 - it only
+  reads your setup, and finds the same mods either way. It now detects an MO2 launch and
+  tells you to run the EXE directly instead. If it does not see your mods, use
+  Settings -> Re-Index and point it at your MO2 mods folder.
+- Fixed: the dependency panel could say "loaded 4/4" and "missing" about the same plugin.
+
+- New: FaceForge now warns you when Expressive Facegen Morphs is not active.
+
+  That last one matters more than it sounds. FaceForge writes only EFM sliders. If EFM is
+  not active in game, RaceMenu imports your preset without any error and then ignores every
+  value in it, so your character loads as the plain race default and looks the same no
+  matter which photo you used. The app never told you this. It does now.
+
+  If your exported faces came out looking generic, check that first.
+
+
+-------------------------------------------------------------------------------
+SHORT VERSION — for the file description box
+-------------------------------------------------------------------------------
+
+Bug fixes from user reports: OpenRouter no longer 404s, the export button is reachable on
+small screens, Mod Organizer 2 launches explain themselves instead of failing on WebView2,
+and the app now warns you when Expressive Facegen Morphs is missing - without it RaceMenu
+silently ignores every slider FaceForge writes. Face measurement is unchanged from 0.24.1.
+Windows tool: unzip anywhere and run the EXE, do not install into Skyrim Data / Vortex / MO2.
+
+
+-------------------------------------------------------------------------------
+PINNED COMMENT / STICKY — optional
+-------------------------------------------------------------------------------
+
+If your exported preset loaded in game and the character looked generic - like the race
+default, barely different from any other preset you made - check whether Expressive Facegen
+Morphs is active. FaceForge writes only EFM sliders, and without that mod RaceMenu imports
+the preset without complaint and then ignores everything in it. 0.24.3 warns you when it is
+missing. If it is present and you are still getting a generic result, please say so in the
+comments with the photo and the exported .jslot, because that is a different problem and I
+have not found it yet.
+
+OpenRouter is also fixed - the 404 was FaceForge sending an impossible provider request, not
+anything wrong with your key.

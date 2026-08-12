@@ -1,13 +1,38 @@
 # FaceForge state
 
-- Active version: `FaceForge 0.24.2` (parent 0.24.1), tool-validated release.
-- Final EXE: `FaceForge-0.24.2-STANDALONE.exe`, 125,978,715 bytes.
-- SHA-256: `7AF302AF5FAE190B1F190B7688FF4E3633F00114FA6BF113C4B6850089759803`.
-- FileVersion 0.24.2.0; launch verified (still running after 14s, then stopped).
+- Active version: `FaceForge 0.24.3` (parent 0.24.2, withdrawn), tool-validated release.
+- Final EXE: `FaceForge-0.24.3-STANDALONE.exe`, 125,978,736 bytes.
+- SHA-256: `73BF90EA0A2A5B4D52E19BB7DABF592AB13BA192F5F4C7A8F42F2DFFE2D200E0`.
+- FileVersion 0.24.3.0; launch verified (still running after 14s, then stopped).
 - Tests: 100 frontend, 96 native assertions. TypeScript clean, .NET Release clean, 0 warnings.
-- Product version: `0.24.2`; public distribution remains exactly one self-contained EXE.
+- Rendered-layout check at 1092x614 and 1280x720 (see below) -- this is what 0.24.2 skipped.
+- Product version: `0.24.3`; public distribution remains exactly one self-contained EXE.
 
-## What changed in 0.24.2
+## What changed in 0.24.3
+
+0.24.2 is withdrawn. Its small-screen fix relaxed `.app-shell` from `height: 100%` to
+`min-height: 100%`, and the shell is a `58px minmax(0, 1fr) 82px` grid -- a `1fr` track only
+resolves against a definite height. Without one the middle track sized to content, the
+workspace panels stopped scrolling internally, and they grew to their full content length.
+The source panel's portrait area stretched down several screens.
+
+Restored to `height: 100%` with the original `min-height: 680px` floor. That floor is what
+makes a short viewport reachable, and it was already in 0.24.1 -- only the root `overflow:
+hidden` -> `auto` was ever needed.
+
+Measured in a rendered browser:
+
+    1092x614 (a 1366x768 laptop at 125% scaling)
+      shell 680px, root scrollable, status rail at 680 and fully visible after a 66px scroll
+      workspace panels fixed at 562px; output panel scrolls internally over 2720px of content
+
+    1280x720
+      shell 720px, fills the viewport exactly, no page scroll; all three panels 602px
+
+Everything else from 0.24.2 carries forward byte-for-byte. The measurement pipeline is
+untouched; exported presets remain identical to 0.24.1.
+
+## What changed in 0.24.2 (withdrawn)
 
 Four defects reported on the Nexus page, plus one warning for a fifth that is only partly
 explained. The measurement pipeline is untouched; exported presets are identical to 0.24.1.

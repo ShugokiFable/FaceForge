@@ -1,5 +1,27 @@
 # Decisions
 
+## 0.24.3 - a layout change is not verified by a type check (2026-08-12)
+
+- **Fix the cause, then stop.** The clipped export button had exactly one cause: `overflow:
+  hidden` on the root elements. 0.24.2 changed that *and* relaxed `.app-shell` from `height`
+  to `min-height`, reasoning about the second change instead of testing it. The first change
+  was the fix; the second broke the layout at every window size. A second edit made "for
+  consistency" alongside a correct one-line fix is an unreviewed change.
+- **`1fr` needs a definite height.** `grid-template-rows: 58px minmax(0, 1fr) 82px` resolves
+  the middle track against the container's height. Under `min-height` there is no definite
+  height, so the track sizes to content, every `overflow: auto` child stops scrolling
+  internally, and the panels grow without bound. `min-height: 680px` alongside `height: 100%`
+  already provided the short-viewport floor -- the original rule was correct and did not need
+  touching.
+- **Green tests on a layout change mean nothing.** 100 frontend tests, a clean `tsc`, and a
+  clean .NET Release build all passed on a build whose UI was visibly destroyed. None of them
+  render a page. `qa/browser-qa.mjs` exists for exactly this and was not run. Measure the
+  rendered geometry at the size the bug was reported at, and at a normal size to prove the
+  common case is unchanged.
+- **Withdraw rather than patch over.** 0.24.2 was tagged, pushed and released before the
+  defect was seen. It is withdrawn with its asset removed rather than left downloadable
+  beside a working build, and 0.24.3 carries its fixes forward unchanged.
+
 ## 0.24.2 - a filter that excludes everything is not a safe default (2026-08-12)
 
 - **Stacked privacy filters can be a total outage.** Each OpenRouter routing clause narrows the

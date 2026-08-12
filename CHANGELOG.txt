@@ -2,6 +2,53 @@
 # One living file.
 
 ================================================================================
+## [0.24.3] - 2026-08-12 - withdraws 0.24.2, which broke the layout it was fixing
+
+Agent: Claude
+Parent: FaceForge 0.24.2
+
+0.24.2 is withdrawn. Everything it fixed is in this release; the one thing it broke is not.
+
+### The small-screen fix broke the layout on every screen
+
+0.24.1 clipped the bottom row on short viewports because `html`/`body`/`#root` were
+`overflow: hidden`. Changing that to `auto` was the whole fix. 0.24.2 also changed
+`.app-shell` from `height: 100%` to `min-height: 100%`, and that second change was wrong.
+
+The shell is a grid of `58px minmax(0, 1fr) 82px`. A `1fr` track only resolves against a
+definite height. With `min-height` the shell has no definite height, so the middle track
+sized to its content instead: the three workspace panels stopped scrolling internally and
+grew to the full length of whatever they contained. The source panel stretched its portrait
+area down several screens, and the window filled with empty space.
+
+Restored to `height: 100%` with the original `min-height: 680px` floor. The floor is what
+makes a short viewport work -- the shell stays 680px tall and the root scrolls to reach it --
+and it was already there in 0.24.1. Only the root `overflow` ever needed to change.
+
+Measured in a rendered browser at both sizes this time, which is what 0.24.2 skipped:
+
+    1092x614 (a 1366x768 laptop at 125% scaling)
+      shell 680px, root scrollable, status rail at 680 and fully visible after a 66px scroll
+      workspace panels fixed at 562px, output panel scrolls internally (2720px of content)
+
+    1280x720
+      shell 720px, fills the viewport exactly, no page scroll
+      all three panels 602px, identical to 0.24.1
+
+### Everything else is 0.24.2 unchanged
+
+The OpenRouter routing fix, the lenient JSON extraction, the upstream error text, the Mod
+Organizer 2 detection, the "loaded 4/4 and missing" dependency row, and the Expressive
+Facegen Morphs warning are all carried forward exactly as they were. The measurement
+pipeline is still untouched, so exported presets remain identical to 0.24.1.
+
+### Note
+
+A CSS change reached a published build without anyone looking at the rendered page. The
+project has a browser QA harness (`qa/browser-qa.mjs`) and it was not run. A layout change
+is not covered by a type check or a unit test.
+
+================================================================================
 ## [0.24.2] - 2026-08-12 - four reported defects, and the reason presets can look identical in game
 
 Agent: Claude
