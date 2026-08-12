@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -88,11 +89,18 @@ public sealed class OpenRouterVision(HttpClient? client = null)
             temperature = 0,
             max_tokens = 1200,
             stream = false,
+            // Provider routing is a filter, and every clause narrows the pool. Asking for
+            // zero-data-retention endpoints AND strict structured-output support at the
+            // same time left no endpoint for any model, and OpenRouter reports an empty
+            // pool as HTTP 404 — so every request failed, whatever model was entered.
+            //
+            // data_collection "deny" is kept: it is the clause that actually protects the
+            // photograph, and it is widely supported. require_parameters is dropped so a
+            // provider that ignores response_format still routes; the reply is parsed
+            // leniently below for exactly that case.
             provider = new
             {
-                require_parameters = true,
-                data_collection = "deny",
-                zdr = true
+                data_collection = "deny"
             },
             response_format = new
             {
@@ -167,9 +175,55 @@ public sealed class OpenRouterVision(HttpClient? client = null)
         using var response = await _client.SendAsync(request, cancellationToken);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
-            throw new InvalidOperationException(
-                $"OpenRouter returned HTTP {(int)response.StatusCode}. Check the model, key, credits, and privacy routing.");
+            throw new InvalidOperationException(DescribeFailure(response.StatusCode, content));
         return ParseResponse(model, content, context);
+    }
+
+    /// <summary>
+    /// Builds a failure message that repeats what OpenRouter actually said. The previous
+    /// generic text ("check the model, key, credits, and privacy routing") gave the user
+    /// no way to tell an unknown model from an empty provider pool from a spent balance.
+    /// </summary>
+    internal static string DescribeFailure(HttpStatusCode status, string responseBody)
+    {
+        var detail = ExtractErrorMessage(responseBody);
+        var advice = status switch
+        {
+            HttpStatusCode.NotFound =>
+                " No endpoint matched. The model ID may be wrong, or no provider for it accepts images under a no-training data policy. Try another image-capable model.",
+            HttpStatusCode.Unauthorized => " The API key was rejected.",
+            HttpStatusCode.PaymentRequired => " The OpenRouter account is out of credit.",
+            HttpStatusCode.TooManyRequests => " Rate limited; wait and retry.",
+            _ => ""
+        };
+        return $"OpenRouter returned HTTP {(int)status}."
+            + (detail.Length > 0 ? $" {detail}" : "")
+            + advice;
+    }
+
+    private static string ExtractErrorMessage(string responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody)) return "";
+        try
+        {
+            using var document = JsonDocument.Parse(responseBody);
+            if (document.RootElement.TryGetProperty("error", out var error))
+            {
+                if (error.ValueKind == JsonValueKind.String) return Trim(error.GetString());
+                if (error.TryGetProperty("message", out var message)) return Trim(message.GetString());
+            }
+        }
+        catch (JsonException)
+        {
+            // Not JSON; fall through and quote the raw body instead.
+        }
+        return Trim(responseBody);
+    }
+
+    private static string Trim(string? value)
+    {
+        var text = (value ?? "").Replace('\n', ' ').Replace('\r', ' ').Trim();
+        return text.Length > 300 ? text[..300] + "…" : text;
     }
 
     public static VisionResult ParseResponse(
@@ -189,13 +243,47 @@ public sealed class OpenRouterVision(HttpClient? client = null)
         return ParseStructuredResult(model, content, context);
     }
 
+    /// <summary>
+    /// Returns the JSON object inside a model reply. A provider honouring response_format
+    /// returns bare JSON, but now that require_parameters no longer filters those providers
+    /// out, replies may arrive fenced in ```json or wrapped in a sentence. Scanning for the
+    /// outermost balanced braces accepts both without accepting nonsense.
+    /// </summary>
+    internal static string ExtractJsonObject(string content)
+    {
+        var text = (content ?? "").Trim();
+        if (text.StartsWith('{') && text.EndsWith('}')) return text;
+
+        var start = text.IndexOf('{');
+        if (start < 0) throw new InvalidDataException("The vision model did not return JSON.");
+
+        var depth = 0;
+        var inString = false;
+        var escaped = false;
+        for (var index = start; index < text.Length; index++)
+        {
+            var character = text[index];
+            if (inString)
+            {
+                if (escaped) escaped = false;
+                else if (character == '\\') escaped = true;
+                else if (character == '"') inString = false;
+                continue;
+            }
+            if (character == '"') inString = true;
+            else if (character == '{') depth++;
+            else if (character == '}' && --depth == 0) return text[start..(index + 1)];
+        }
+        throw new InvalidDataException("The vision model returned truncated JSON.");
+    }
+
     public static VisionResult ParseStructuredResult(
         string model,
         string content,
         VisionContext? context = null)
     {
         var limit = (context ?? VisionContext.Refinement).Limit;
-        using var result = JsonDocument.Parse(content);
+        using var result = JsonDocument.Parse(ExtractJsonObject(content));
         var root = result.RootElement;
         var confidence = root.GetProperty("confidence").GetDouble();
         if (!double.IsFinite(confidence) || confidence is < 0 or > 1)

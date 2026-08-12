@@ -1,44 +1,55 @@
-# FaceForge 0.22.0 validation
+# FaceForge 0.24.2 validation
 
-Status: tool-validated standalone release. Provider quality and in-game likeness are untested.
+Status: tool-validated standalone release. In-game likeness is untested, and the OpenRouter
+fix is not runtime-confirmed — see "Not verified" below.
 
 ## Authority and version gate
 
-- Authoritative project: `FaceForge`; parent: 0.21.1; active: 0.22.0.
-- Full-copy parity before edits: 1,015 files / 882,770,886 bytes, zero path/length differences.
-- Game, Vortex, CharGen, follower, and installed-tool trees were read-only.
-- CURRENT, VERSION, CHANGELOG, PLAN, STATE, DECISIONS, REQUIREMENTS, and VALIDATION updated.
-
-## Semantic regression
-
-- Clean photograph fixture: local analysis remained `refine`; rendered app showed no warning.
-- Anime/Art fixture: analysis switched to `interpret`, displayed the reason, and relabeled the
-  action to `Interpret face with vision model`.
-- Known bad-pose evidence (26% landmark disagreement, 155 surviving pairs) selects `interpret`.
-- Interpretation result application starts from neutral; refinement still starts from local values.
-- Native prompt/schema carries +/-3 for interpretation and +/-1 for refinement.
+- Authoritative project: `FaceForge`; parent: 0.24.1; active: 0.24.2.
+- Snapshot created by full copy of 0.24.1 with build outputs excluded (node_modules, dist,
+  bin, obj, artifacts, TestResults, mediapipe wasm, embedded web bundle).
+- Version strings bumped in build.ps1, package.ps1, README.md, ExportPackager.cs,
+  OpenRouterVision.cs, EmbeddedWebBundle.cs, FaceForge.Desktop.csproj, package.json,
+  AboutModal.tsx, racemenu.ts. Historical references in `faceAnalysis.ts` left as written.
+- Game, Vortex, MO2, CharGen, and installed-tool trees were read-only. SSEEdit / xEdit /
+  Creation Kit not launched.
+- CURRENT, VERSION, CHANGELOG, STATE, DECISIONS, GITHUB, NEXUS-RELEASE, and VALIDATION updated.
+- A stray `package-lock.json` (from an `npm install` during diagnosis) was removed from both
+  snapshots; this project ships `pnpm-lock.yaml`.
 
 ## Build and package
 
 - `package.ps1`: PASS.
-- Frontend: 7 files / 62 tests PASS.
-- Native core: 82 assertions PASS.
-- TypeScript/Vite production build: PASS.
+- Frontend: 9 files / 100 tests PASS.
+- Native core: 96 assertions PASS, 1 preset, 4 plugins.
+- TypeScript build + Vite production build: PASS.
 - .NET Release: 0 warnings / 0 errors.
 - Publish single-file gate: one `FaceForge.exe`.
-- Skyrim release-tree validator self-test and one-EXE audit: PASS.
-- Isolated launch: one copied EXE remained running after 10 seconds; no companion files required.
-- Product/File versions: 0.22.0 / 0.22.0.0.
+- Launch check: packaged EXE ran for 14 seconds and was then stopped. FileVersion 0.24.2.0.
+- EXE: `FaceForge-0.24.2-STANDALONE.exe`, 125,978,715 bytes,
+  SHA-256 `7AF302AF5FAE190B1F190B7688FF4E3633F00114FA6BF113C4B6850089759803`.
+- ZIP: `FaceForge-0.24.2-STANDALONE.zip`, 119,143,381 bytes,
+  SHA-256 `5C48103F6D8F0F26CDF5A676096D9CC8AEBE0D9DC4F3FCF6E97C9804BC765B25`,
+  containing the EXE and README.md only.
 
-## Final package
+## Coverage added for this release
 
-- Path: `FaceForge 0.22.0 - STANDALONE.exe`
-- Length: 125,934,029 bytes
-- SHA-256: `6E808E00DDFA11AECF55944662B39FA380DE6E8FDB74A4FE0FE1F65A7C47BF44`
+- OpenRouter routing: asserts `data_collection: "deny"` is sent and that `zdr` and
+  `require_parameters` are absent. The previous suite asserted the broken routing and had to
+  be corrected.
+- `ExtractJsonObject`: bare object, fenced object, brace inside a string literal, prose with no
+  object (rejected), truncated object (rejected).
+- `DescribeFailure`: upstream error text is carried through instead of replaced.
 
-## Not validated
+## Not verified
 
-- No live provider request or provider-account login.
-- No direct numeric run on the official Frieren design sheet; its asset host rejected retrieval.
-- No RaceMenu preset load, external head bake, follower build, or gameplay test.
-- No SSEEdit/xEdit/Creation Kit GUI use.
+- **The OpenRouter fix is not runtime-confirmed.** No live request was made — that needs a key
+  and credits. The diagnosis (an empty provider pool returned as 404) is derived from the
+  request FaceForge sent and from OpenRouter's documented routing behaviour, and the assertions
+  cover the request shape, not the response. Structural validation is not runtime confirmation.
+- **The MO2 detection was not exercised under a real MO2 launch.** The usvfs module check and
+  the `MO_PROFILE` fallback are both untriggered in this environment.
+- **The small-screen fix was not viewed at 1366x768 / 125%.** The CSS cause is unambiguous, but
+  no capture at that size exists.
+- **In-game likeness is untested**, as in every prior release. The EFM warning addresses a known
+  silent-failure path; it does not close the open report of a generic result with EFM present.

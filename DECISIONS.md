@@ -1,5 +1,37 @@
 # Decisions
 
+## 0.24.2 - a filter that excludes everything is not a safe default (2026-08-12)
+
+- **Stacked privacy filters can be a total outage.** Each OpenRouter routing clause narrows the
+  provider pool, so `zdr` + `data_collection` + `require_parameters` intersect rather than
+  degrade. The intersection was empty for every model in the catalogue, and an empty pool comes
+  back as HTTP 404 -- indistinguishable, from the user's side, from a wrong model name. Three
+  individually defensible requirements produced a feature that had never worked for anyone.
+  Keep the one clause that carries the actual privacy requirement; treat the rest as preferences.
+- **A guessed error message sends people to debug the wrong thing.** The old failure text named
+  the model, the key and the credits. All three were fine in every report. Repeating what the
+  upstream service said costs nothing and would have located this in one comment instead of a
+  release cycle.
+- **Relaxing a strictness flag means widening the parser.** Dropping `require_parameters` allows
+  providers that ignore `response_format`, so the reply may be fenced or prefaced with prose.
+  The lenient extractor is part of the fix, not a nicety.
+- **`overflow: hidden` plus a pixel `min-height` is a trap, not a layout.** Either alone is fine.
+  Together they guarantee that some display size has content it cannot reach, and the failure is
+  invisible to whoever authored it on a large monitor.
+- **A tool that reads a mod setup should say it is a tool.** Running FaceForge through MO2 is a
+  reasonable thing for a Skyrim user to try, and the resulting WebView2 error explains nothing.
+  Detecting the wrong-environment case and naming it is cheaper than supporting it.
+- **Writing into exactly one slider family is a dependency, and an undeclared one is a silent
+  no-op.** 0.24.0's one-measurement-per-family rule is correct, but it makes Expressive Facegen
+  Morphs load-bearing: without it RaceMenu imports the preset, reports success, and applies
+  nothing. Every report of "it looks generic in game" is consistent with this, and the app said
+  nothing. A dependency that can fail silently has to be checked in the UI.
+- **Do not tune a number because of a complaint.** Slider gain was the obvious suspect for
+  "looks nothing close like it in game". It measures as reasonable -- 0.18 gain against
+  sensitivities of 14-38 lands inside the band hand-authored presets occupy -- so it was left
+  alone. One report still describes a generic result with EFM present; that stays open rather
+  than being papered over with a gain change that would have no evidence behind it.
+
 ## 0.24.1 - a rejected measurement is not the same as an unmeasurable one (2026-08-06)
 
 - **Check whether the data already exists before capping a guess.** 0.24.0 bounded five estimated

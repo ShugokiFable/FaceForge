@@ -1,0 +1,23 @@
+FaceForge 0.24.2
+
+Parent: FaceForge 0.24.1
+- Fixed OpenRouter returning 404 for every model. Three provider-routing filters were
+  pinned at once and their intersection was empty; OpenRouter reports an empty provider
+  pool as 404, so the feature failed identically whatever model was entered.
+- Fixed the unreachable export button on small screens. Root overflow was hidden while
+  the shell forced a 680px minimum height, so a 1366x768 laptop at 125% scaling clipped
+  the bottom row with nothing to scroll.
+- Mod Organizer 2 launches now explain themselves instead of showing a bare WebView2
+  error. FaceForge is a tool, not a mod; it reads the same setup when run directly.
+- The dependency panel no longer prints "loaded 4/4" and "missing" about the same plugin,
+  and now warns when Expressive Facegen Morphs is absent -- without it RaceMenu ignores
+  every value FaceForge writes.
+
+No change to the measurement pipeline. Exported presets are identical to 0.24.1.
+
+Final ZIP: FaceForge-0.24.2-STANDALONE.zip
+Bytes: 119143381
+SHA-256: 5C48103F6D8F0F26CDF5A676096D9CC8AEBE0D9DC4F3FCF6E97C9804BC765B25
+EXE: FaceForge-0.24.2-STANDALONE.exe
+EXE bytes: 125978715
+EXE SHA-256: 7AF302AF5FAE190B1F190B7688FF4E3633F00114FA6BF113C4B6850089759803

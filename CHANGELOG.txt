@@ -2,6 +2,90 @@
 # One living file.
 
 ================================================================================
+## [0.24.2] - 2026-08-12 - four reported defects, and the reason presets can look identical in game
+
+Agent: Claude
+Parent: FaceForge 0.24.1
+
+Bug-fix release. Everything here came from user reports on the Nexus page. No change to
+the measurement pipeline or to exported slider values -- a preset exported by 0.24.1 and
+one exported by 0.24.2 are byte-for-byte the same.
+
+### OpenRouter returned 404 for every model
+
+The cause was not the key, the credits, or the model name -- it was FaceForge's own
+request. Provider routing was pinned with three clauses at once:
+
+    provider: { zdr: true, data_collection: "deny", require_parameters: true }
+    response_format: json_schema (strict)
+
+Each clause is a filter over the provider pool, and they intersect. Demanding
+zero-data-retention endpoints AND strict structured-output support at the same time left
+zero endpoints for every model in the catalogue, and OpenRouter reports an empty pool as
+HTTP 404. So the feature failed identically no matter what anyone typed, which is why it
+read as "does not work at all" rather than as a model-specific problem.
+
+Only `data_collection: "deny"` is kept. That is the clause that actually protects the
+photograph, and it is widely supported. `zdr` and `require_parameters` are gone.
+
+Two follow-on fixes, because dropping `require_parameters` means a provider may now ignore
+`response_format` and answer in prose or in a fenced code block:
+
+- Responses are scanned for the JSON object with a brace-balanced, string-aware pass, so a
+  ```json fence or a sentence of preamble no longer fails the parse.
+- Errors now repeat what OpenRouter actually said. The old message guessed at "check the
+  model, key, credits", which sent people to look at three things that were all fine.
+
+### Mod Organizer 2 could not start WebView2
+
+FaceForge is a Windows tool, not a mod, and it never needs to run inside MO2 -- it only
+reads the mod setup. Launched through MO2 it runs inside the USVFS virtual file system,
+which WebView2 cannot initialise under, and the user saw a bare "could not initialize
+webview2".
+
+FaceForge now detects the injected usvfs module and says what to do instead: close it and
+run FaceForge.exe directly, outside MO2. It finds the same mods either way, and Settings ->
+Re-Index can be pointed at the MO2 mods folder if it does not.
+
+This is a message, not a workaround. Running under MO2 is still not supported.
+
+### The export button was unreachable on small screens
+
+`html`, `body` and `#root` were `overflow: hidden` while `.app-shell` forced
+`min-height: 680px`. A 1366x768 laptop at 125% scaling has about 614 CSS pixels of height,
+so the bottom row was clipped off with nothing to scroll -- the export controls existed and
+could not be reached. Overflow is now `auto` and the shell uses `min-height: 100%`.
+`min-width: 980px` is unchanged; horizontal scrolling was already working.
+
+### "loaded 4/4" and "missing" at the same time
+
+A plugin that was found but whose source mod could not be named rendered its source column
+as "missing" while the counter above it counted the same plugin as present. Both readings
+were of the same row. It now reads "present, source mod not identified".
+
+### Expressive Facegen Morphs is now called out when it is absent
+
+FaceForge writes only the EFM_ slider family. If Expressive Facegen Morphs is not active in
+game, RaceMenu silently ignores every value in the preset, and the character loads as the
+plain race default -- identical whatever photograph was used. Nothing in the app said so.
+The dependency panel now carries a warning card when EFM is missing, explaining that the
+preset will import without error and change nothing.
+
+This is the known mechanism behind "both are imperials per the tool, and the difference in
+game are extremely minor". It is not proven to be the only one. One report describes a
+generic result with EFM present, which this does not explain, and that is still open --
+see DECISIONS.md.
+
+### Not in this release
+
+- No change to slider gain or to the response curve. RESPONSE_GAIN 0.18 against
+  sensitivities of 14-38 lands roughly where hand-authored presets sit, so there is no
+  measured reason to move it. Changing it on the strength of a complaint would be a guess.
+- No photograph guidance. The request for example images and for a rule on acceptable
+  angles is real and unanswered; the side-view rejection ("too close to a full profile")
+  still gives no way to know what would have been accepted.
+
+================================================================================
 ## [0.24.1] - 2026-08-06 - three baselines were measurable all along; the UI stops lying
 
 Agent: Claude

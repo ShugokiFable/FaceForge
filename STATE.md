@@ -1,13 +1,48 @@
 # FaceForge state
 
-- Active version: `FaceForge 0.24.1` (parent 0.24.0), tool-validated release.
-- Final EXE: `FaceForge-0.24.1-STANDALONE.exe`, 125,974,779 bytes.
-- SHA-256: `61D0399A7B6D86E64EB4707E93239A0EC385F78A61C003DB4D4AF58F85E9C7FD`.
-- FileVersion 0.24.1.0; launch verified (still running after 12s, then stopped).
-- Tests: 100 frontend (18 new since 0.23.2), 96 native assertions. TypeScript clean, .NET Release clean, 0 warnings.
-- Product version: `0.24.1`; public distribution remains exactly one self-contained EXE.
+- Active version: `FaceForge 0.24.2` (parent 0.24.1), tool-validated release.
+- Final EXE: `FaceForge-0.24.2-STANDALONE.exe`, 125,978,715 bytes.
+- SHA-256: `7AF302AF5FAE190B1F190B7688FF4E3633F00114FA6BF113C4B6850089759803`.
+- FileVersion 0.24.2.0; launch verified (still running after 14s, then stopped).
+- Tests: 100 frontend, 96 native assertions. TypeScript clean, .NET Release clean, 0 warnings.
+- Product version: `0.24.2`; public distribution remains exactly one self-contained EXE.
 
-## What changed
+## What changed in 0.24.2
+
+Four defects reported on the Nexus page, plus one warning for a fifth that is only partly
+explained. The measurement pipeline is untouched; exported presets are identical to 0.24.1.
+
+**OpenRouter 404.** `OpenRouterVision.cs` pinned `provider: { zdr, data_collection,
+require_parameters }` together with a strict `response_format`. Routing clauses intersect,
+and the intersection was empty for every model, which OpenRouter returns as 404. Only
+`data_collection: "deny"` survives. Dropping `require_parameters` means a provider may ignore
+`response_format`, so `ExtractJsonObject` now recovers the object from a fenced or
+prose-wrapped reply with a brace-balanced, string-aware scan, and `DescribeFailure` surfaces
+the upstream error text instead of guessing at key/credits/model.
+
+**Small screens.** `html`/`body`/`#root` were `overflow: hidden` against a 680px
+`.app-shell` minimum height. ~614 CSS px of usable height on a 1366x768 panel at 125%
+scaling clipped the export row with nothing to scroll. Overflow is `auto`, shell is
+`min-height: 100%`. `min-width: 980px` unchanged.
+
+**MO2.** `IsRunningUnderModOrganizer` checks the loaded modules for `usvfs*` and falls back
+to `MO_PROFILE`. On a match, the WebView2 startup failure is replaced with an explanation.
+Not a workaround -- running under USVFS is still unsupported.
+
+**Dependency panel.** A present plugin with an unidentified source mod rendered as "missing"
+beside a counter that called it present. Now "present, source mod not identified". A warning
+card appears when `EFM_PLUGIN` is absent, because FaceForge writes only the `EFM_` family and
+RaceMenu silently discards all of it without that mod.
+
+### Open
+
+The "generic result in game" report is not closed. The EFM warning explains the case where
+EFM is missing, and one reporter had it present. Slider gain was inspected and left alone:
+`RESPONSE_GAIN` 0.18 against sensitivities of 14-38 lands inside the range hand-authored
+presets occupy, so there is no measured reason to move it. Needs a photo plus the exported
+`.jslot` to go further. Photograph guidance is still unwritten.
+
+## What changed in 0.24.1
 
 FaceForge stops applying the same measurement several times, and stops letting a guessed baseline
 sculpt at full strength. Both defects predate 0.23.x; both were found from a preset the user
