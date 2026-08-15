@@ -145,6 +145,138 @@ public sealed class CliVisionProvider
         }
     }
 
+    /// <summary>
+    /// Multi-image analysis: the target photo AND FaceForge's current render, from up to three angles,
+    /// plus the current slider values, so a local CLI model can compare them the same way the
+    /// OpenRouter path does. Refine returns deltas; assess returns a read-only score + comments.
+    /// </summary>
+    public async Task<VisionResult> AnalyzeAsync(
+        CliVisionProviderKind provider,
+        IReadOnlyList<OpenRouterVision.VisionImage> images,
+        string? sliderContext,
+        OpenRouterVision.VisionContext? context = null,
+        CancellationToken cancellationToken = default)
+    {
+        var visionContext = context ?? OpenRouterVision.VisionContext.Refinement;
+        var status = GetStatus(provider);
+        if (!status.Installed || string.IsNullOrWhiteSpace(status.ExecutablePath))
+            throw new FileNotFoundException(
+                $"{status.DisplayName} is not installed. Open Settings for the official install and sign-in link.");
+        if (images is null || images.Count == 0)
+            throw new ArgumentException("At least one image is required.", nameof(images));
+        if (images.Count > 8)
+            throw new ArgumentException("Too many images for one vision request.", nameof(images));
+
+        var workRoot = Path.Combine(Path.GetTempPath(), "FaceForge", "Vision", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(workRoot);
+        try
+        {
+            var labelled = new List<(string Label, string FileName)>();
+            for (var i = 0; i < images.Count; i++)
+            {
+                var match = ImageDataUrl.Match(images[i].DataUrl);
+                if (!match.Success || images[i].DataUrl.Length > 8_000_000)
+                    throw new ArgumentException("Each analysis image must be a JPEG, PNG, or WebP data URL under 8 MB.");
+                var extension = match.Groups["format"].Value == "jpeg" ? "jpg" : match.Groups["format"].Value;
+                var fileName = $"image{i}.{extension}";
+                await File.WriteAllBytesAsync(
+                    Path.Combine(workRoot, fileName),
+                    Convert.FromBase64String(match.Groups["data"].Value),
+                    cancellationToken);
+                labelled.Add((images[i].Label, fileName));
+            }
+            if (!string.IsNullOrWhiteSpace(sliderContext))
+                await File.WriteAllTextAsync(Path.Combine(workRoot, "sliders.txt"), sliderContext, Encoding.UTF8, cancellationToken);
+
+            var schemaPath = Path.Combine(workRoot, "response-schema.json");
+            await File.WriteAllTextAsync(
+                schemaPath, OpenRouterVision.BuildResultSchemaJson(visionContext), Encoding.UTF8, cancellationToken);
+            var resultPath = Path.Combine(workRoot, "result.json");
+            var invocation = BuildInvocationMulti(
+                provider, labelled, "response-schema.json", "result.json",
+                !string.IsNullOrWhiteSpace(sliderContext), visionContext);
+
+            var processResult = await RunAsync(
+                status.ExecutablePath, invocation.Arguments, workRoot, invocation.StandardInput, cancellationToken);
+            if (processResult.ExitCode != 0)
+                throw new InvalidOperationException(
+                    $"{status.DisplayName} exited with code {processResult.ExitCode}. " +
+                    "Open Settings, connect the account, and try again. " +
+                    TrimError(processResult.StandardError));
+
+            var responseText = provider == CliVisionProviderKind.Codex
+                ? await ReadCodexResultAsync(resultPath, processResult.StandardOutput, cancellationToken)
+                : UnwrapProviderResponse(provider, processResult.StandardOutput);
+            return OpenRouterVision.ParseStructuredResult(status.DisplayName, ExtractJson(responseText), visionContext);
+        }
+        finally
+        {
+            if (Directory.Exists(workRoot)) Directory.Delete(workRoot, recursive: true);
+        }
+    }
+
+    internal static string BuildPromptMulti(
+        IReadOnlyList<(string Label, string FileName)> images,
+        bool hasSliderContext,
+        OpenRouterVision.VisionContext context)
+    {
+        var limit = context.Limit.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        var manifest = string.Join(" ", images.Select(item => $"[{item.Label} = {item.FileName}]"));
+        var sliders = hasSliderContext
+            ? "The current EFM slider values are in sliders.txt in the working directory. "
+            : "";
+        var task = context.Assess
+            ? "Return raw JSON only, matching response-schema.json: fit_score (integer 0-100, how well the current render matches the target photo across the angles) and up to 8 short observations naming the biggest remaining differences, most important first. Do not return slider values."
+            : "Return raw JSON only, matching response-schema.json: confidence from 0 to 1, up to 8 short observations, and slider_deltas containing every key in the schema, each from " +
+              $"-{limit} to {limit}. Use zero when the render already matches. ";
+        return
+            OpenRouterVision.BuildSystemPrompt(context) + " " +
+            $"The images in the working directory are: {manifest}. " + sliders + task +
+            " Do not modify any files.";
+    }
+
+    internal static (IReadOnlyList<string> Arguments, string? StandardInput) BuildInvocationMulti(
+        CliVisionProviderKind provider,
+        IReadOnlyList<(string Label, string FileName)> images,
+        string schemaFile,
+        string resultFile,
+        bool hasSliderContext,
+        OpenRouterVision.VisionContext context)
+    {
+        var prompt = BuildPromptMulti(images, hasSliderContext, context);
+        switch (provider)
+        {
+            case CliVisionProviderKind.Codex:
+                var codex = new List<string>
+                {
+                    "exec", "--skip-git-repo-check", "--ephemeral", "--sandbox", "read-only"
+                };
+                foreach (var image in images) { codex.Add("--image"); codex.Add(image.FileName); }
+                codex.AddRange(["--output-schema", schemaFile, "--output-last-message", resultFile, "-"]);
+                return (codex, prompt);
+            case CliVisionProviderKind.Claude:
+                return (
+                    [
+                        "-p", "--output-format", "json", "--max-turns", "3",
+                        "--allowedTools", "Read",
+                        "--disallowedTools", "Bash", "Edit", "Write", "NotebookEdit",
+                        prompt
+                    ],
+                    null);
+            case CliVisionProviderKind.Gemini:
+                var refs = string.Join(" ", images.Select(item => $"@{{{item.FileName}}}"));
+                var slidersRef = hasSliderContext ? "@{sliders.txt} " : "";
+                return (
+                    [
+                        "-p", $"{refs} @{{{schemaFile}}} {slidersRef}{prompt}",
+                        "--output-format", "json"
+                    ],
+                    null);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(provider));
+        }
+    }
+
     public static (IReadOnlyList<string> Arguments, string? StandardInput) BuildInvocation(
         CliVisionProviderKind provider,
         string portraitPath,

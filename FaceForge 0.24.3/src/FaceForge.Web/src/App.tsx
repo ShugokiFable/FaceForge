@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import AboutModal, { type VisionSettings } from "./components/AboutModal";
-import AnalysisPanel from "./components/AnalysisPanel";
+import AboutModal, { type VisionSettings, type Mo2State } from "./components/AboutModal";
+import MatchPanel, { type ReferenceSource } from "./components/MatchPanel";
+import { computeSculpt, renderHeads, reshapedRenderRequest, RESHAPE_KEYS, type RenderTargetMeta } from "./domain/headRender";
+import { efmSliderNames } from "./domain/fit";
 import Header from "./components/Header";
 import { DownloadIcon, MonitorIcon } from "./components/Icons";
 import OutputPanel, { type OutputMode } from "./components/OutputPanel";
@@ -9,6 +11,7 @@ import {
   EFM_RANGE,
   NO_CORRECTION_NEEDED,
   assessAnalysisReliability,
+  baselinesForTarget,
   createNeutralEfmSliders,
   generateEfmSliders,
   measureFace,
@@ -60,9 +63,10 @@ import {
 import {
   hasNativeBridge,
   postNative,
-  resizeImageForVision,
+  resizeImageUrlForVision,
   subscribeNative,
   type CliProviderStatus,
+  type VisionImagePayload,
   type AppearanceChoice,
   type AppearanceSex,
   type EnvironmentSummary,
@@ -165,6 +169,31 @@ const seekVideo = (video: HTMLVideoElement, time: number): Promise<void> =>
     video.currentTime = time;
   });
 
+const readStoredMo2 = (key: string): string => {
+  try {
+    return window.localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+};
+
+const storeMo2 = (key: string, value: string): void => {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Private-mode or storage-disabled browsers just lose the remembered path; not fatal.
+  }
+};
+
+/** Reads a persisted setting, returning null when storage is unavailable or the key is unset. */
+const readStored = (key: string): string | null => {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
 export default function App() {
   const nativeAvailable = hasNativeBridge();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -211,13 +240,17 @@ export default function App() {
   const [outputMode, setOutputMode] = useState<OutputMode>("preset-pack");
   const [permissionConfirmed, setPermissionConfirmed] = useState(false);
   const [targetSex, setTargetSex] = useState<Exclude<AppearanceSex, "any" | "unflagged">>(
-    "female"
+    () => (readStored("faceforge.targetSex") === "male" ? "male" : "female")
   );
   // Optional light male/female baseline nudge. Off by default so the photo stays authoritative.
-  const [sexTouchUp, setSexTouchUp] = useState(false);
+  const [sexTouchUp, setSexTouchUp] = useState(() => readStored("faceforge.sexTouchUp") === "1");
   // Optional geometry style (not ethnicity). Off by default.
-  const [shapeStyle, setShapeStyle] = useState<ShapeStyleId>("none");
-  const [targetRace, setTargetRace] = useState<string | null>(null);
+  const [shapeStyle, setShapeStyle] = useState<ShapeStyleId>(
+    () => (readStored("faceforge.shapeStyle") as ShapeStyleId) || "none"
+  );
+  const [targetRace, setTargetRace] = useState<string | null>(
+    () => readStored("faceforge.targetRace") || null
+  );
   /** Categories the user manually toggled; auto-prefer must not overwrite those. */
   const [manualAppearanceCategories, setManualAppearanceCategories] = useState<
     Set<AppearanceChoice["category"]>
@@ -243,13 +276,41 @@ export default function App() {
   const [isIndexing, setIsIndexing] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [visionResult, setVisionResult] = useState<VisionResult | null>(null);
+  // Read-only "Analyze fit" critique (a model score + comments), kept separate from the refine result
+  // so judging a manual tweak never touches the sliders.
+  const [assessing, setAssessing] = useState(false);
+  const [fitAssessment, setFitAssessment] = useState<VisionResult | null>(null);
+  const pendingVisionAssess = useRef(false);
   const [providerStatuses, setProviderStatuses] = useState<CliProviderStatus[]>([]);
-  const [vision, setVision] = useState<VisionSettings>({
-    enabled: false,
-    provider: "codex",
-    apiKey: "",
-    model: "",
-    consent: false
+  const [mo2, setMo2] = useState<Mo2State>(() => ({
+    modsPath: readStoredMo2("faceforge.mo2.modsPath"),
+    profile: readStoredMo2("faceforge.mo2.profile"),
+    profiles: [],
+    gameDataPath: null,
+    error: null
+  }));
+  const [vision, setVision] = useState<VisionSettings>(() => {
+    const base: VisionSettings = {
+      enabled: false,
+      provider: "codex",
+      apiKey: "",
+      model: "",
+      consent: false
+    };
+    const stored = readStored("faceforge.vision");
+    if (!stored) return base;
+    try {
+      // The API key and per-request consent are deliberately never persisted.
+      const parsed = JSON.parse(stored) as Partial<VisionSettings>;
+      return {
+        ...base,
+        enabled: Boolean(parsed.enabled),
+        provider: (parsed.provider as VisionSettings["provider"]) ?? base.provider,
+        model: typeof parsed.model === "string" ? parsed.model : ""
+      };
+    } catch {
+      return base;
+    }
   });
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState(
@@ -260,6 +321,39 @@ export default function App() {
     () => selectedFaceIsHighPolyHead(Object.values(appearanceSelections).filter(Boolean) as AppearanceChoice[]),
     [appearanceSelections]
   );
+
+  /** Target for the native head renderer: which real chargen head the preset would sculpt. */
+  const matchMeta = useMemo<RenderTargetMeta>(
+    () => ({ sex: targetSex, highPoly: highPolyHeadActive, race: targetRace }),
+    [targetSex, highPolyHeadActive, targetRace]
+  );
+
+  /** Every EFM slider the install exposes for this sex — the full set the fit is allowed to move. */
+  const fitSliderNames = useMemo(
+    () => efmSliderNames(environment?.morphRegistry.sliderSets ?? [], targetSex),
+    [environment, targetSex]
+  );
+
+  /** Race/sex/head baseline measurements, so the fit can work in deviation-from-neutral space. */
+  const matchBaselines = useMemo(
+    () => baselinesForTarget(targetRace, targetSex, sexTouchUp, shapeStyle, highPolyHeadActive),
+    [targetRace, targetSex, sexTouchUp, shapeStyle, highPolyHeadActive]
+  );
+
+  /**
+   * The reference photos the Match pane compares the preset against: the analyzed front photo plus
+   * any guided side views. Extra angles the user adds live inside the pane. Kept identity-stable so
+   * the pane does not re-measure on every render.
+   */
+  const referenceSources = useMemo<ReferenceSource[]>(() => {
+    const list: ReferenceSource[] = [];
+    if (photoUrl) list.push({ id: "front", label: "front", url: photoUrl, analysis });
+    for (const role of ["left", "right"] as const) {
+      const asset = sideViews[role];
+      if (asset) list.push({ id: role, label: role, url: asset.url, analysis: undefined });
+    }
+    return list;
+  }, [photoUrl, analysis, sideViews]);
 
   /**
    * What this installation can actually move on the head being targeted. Recomputed when the head
@@ -347,9 +441,11 @@ export default function App() {
         setIsIndexing(true);
         setError(null);
         setNotice(
-          payload.automatic
-            ? `Skyrim detected through ${String(payload.detectionMethod ?? "Windows")}. Indexing Vortex, CharGen, and appearance assets…`
-            : "Reading the Vortex deployment manifest and indexing relevant Skyrim assets…"
+          payload.mo2
+            ? `Reading MO2 profile "${String(payload.profile ?? "")}" — walking enabled mods in priority order and indexing appearance assets…`
+            : payload.automatic
+              ? `Skyrim detected through ${String(payload.detectionMethod ?? "Windows")}. Indexing Vortex, CharGen, and appearance assets…`
+              : "Reading the Vortex deployment manifest and indexing relevant Skyrim assets…"
         );
         break;
       case "environment-detection-started":
@@ -423,9 +519,14 @@ export default function App() {
         break;
       }
       case "vision-started":
-        setIsRefining(true);
         setError(null);
-        setNotice(`The prepared portrait is being reviewed by ${String(payload.model ?? "the selected model")}…`);
+        if (pendingVisionAssess.current) {
+          setAssessing(true);
+          setNotice(`${String(payload.model ?? "The model")} is rating the current fit…`);
+        } else {
+          setIsRefining(true);
+          setNotice(`The prepared portrait is being reviewed by ${String(payload.model ?? "the selected model")}…`);
+        }
         break;
       case "vision-provider-status":
         setProviderStatuses(message.payload as CliProviderStatus[]);
@@ -437,6 +538,18 @@ export default function App() {
         break;
       case "vision-complete": {
         const result = message.payload as VisionResult;
+        // Assess mode is a read-only critique: show the score and comments, never move a slider.
+        if (pendingVisionAssess.current) {
+          setFitAssessment(result);
+          setAssessing(false);
+          setError(null);
+          setNotice(
+            result.fitScore != null
+              ? `The model rates the current fit ${result.fitScore}/100.`
+              : "The model returned a fit assessment."
+          );
+          break;
+        }
         const interpretation = pendingVisionMode.current === "interpret";
         setVisionResult(result);
         setGeneratedValues((current) => {
@@ -472,11 +585,51 @@ export default function App() {
         );
         break;
       }
+      case "mo2-profiles": {
+        const result = message.payload as {
+          modsPath: string;
+          profilesDir: string | null;
+          gameDataPath: string | null;
+          profiles: string[];
+        };
+        storeMo2("faceforge.mo2.modsPath", result.modsPath ?? "");
+        setMo2((current) => {
+          const profiles = result.profiles ?? [];
+          const profile =
+            current.profile && profiles.includes(current.profile)
+              ? current.profile
+              : profiles[0] ?? "";
+          return {
+            modsPath: result.modsPath ?? current.modsPath,
+            profile,
+            profiles,
+            gameDataPath: result.gameDataPath ?? null,
+            error:
+              profiles.length === 0
+                ? "No MO2 profiles found under that instance's profiles folder."
+                : null
+          };
+        });
+        setNotice(
+          (result.profiles ?? []).length > 0
+            ? `Found ${(result.profiles ?? []).length} MO2 profile(s). Pick one and press Index MO2 profile.`
+            : "No MO2 profiles were found. Check that the path points at the mods folder."
+        );
+        break;
+      }
+      case "mo2-error": {
+        const messageText = String(payload.message ?? "The MO2 operation failed.");
+        setIsIndexing(false);
+        setMo2((current) => ({ ...current, error: messageText }));
+        setNotice(messageText);
+        break;
+      }
       case "native-error": {
         const messageText = String(payload.message ?? "The desktop operation failed.");
         setIsAnalyzing(false);
         setIsIndexing(false);
         setIsRefining(false);
+        setAssessing(false);
         setError(messageText);
         setNotice(messageText);
         break;
@@ -486,6 +639,29 @@ export default function App() {
 
   useEffect(() => {
     if (nativeAvailable) postNative({ type: "vision-provider-status" });
+  }, [nativeAvailable]);
+
+  // Persist the settings that should survive a reload / restart (Ctrl+R clears the face but keeps
+  // these). The API key and per-request consent are intentionally excluded.
+  useEffect(() => storeMo2("faceforge.targetSex", targetSex), [targetSex]);
+  useEffect(() => storeMo2("faceforge.targetRace", targetRace ?? ""), [targetRace]);
+  useEffect(() => storeMo2("faceforge.shapeStyle", shapeStyle), [shapeStyle]);
+  useEffect(() => storeMo2("faceforge.sexTouchUp", sexTouchUp ? "1" : "0"), [sexTouchUp]);
+  useEffect(() => {
+    storeMo2(
+      "faceforge.vision",
+      JSON.stringify({ enabled: vision.enabled, provider: vision.provider, model: vision.model })
+    );
+  }, [vision.enabled, vision.provider, vision.model]);
+
+  // Restore the working environment after a reload: if a previous MO2 profile was chosen, re-index it
+  // automatically so the renderer and fit are available without re-selecting it every session.
+  useEffect(() => {
+    if (!nativeAvailable) return;
+    const modsPath = readStored("faceforge.mo2.modsPath");
+    const profile = readStored("faceforge.mo2.profile");
+    if (modsPath && profile) postNative({ type: "index-mo2", modsPath, profile });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nativeAvailable]);
 
   useEffect(() => {
@@ -972,6 +1148,55 @@ export default function App() {
     );
   }, []);
 
+  /**
+   * Assembles what the model needs to see the gap: each uploaded angle as a "Target photo" image AND
+   * FaceForge's current render at the matching yaw as a "Current render" image, plus the current EFM
+   * slider values as text. The profile angles are what reveal depth (nose projection, chin, brow) that
+   * a front view hides. Rendering is best-effort — if the head is not indexed we send the photos alone.
+   */
+  const buildVisionPayload = useCallback(
+    async (
+      sliders: Record<string, number>
+    ): Promise<{ images: VisionImagePayload[]; sliderContext: string }> => {
+      const angles: { role: "front" | "left" | "right"; url: string; yaw: number }[] = [];
+      if (photoUrl) angles.push({ role: "front", url: photoUrl, yaw: 0 });
+      if (sideViews.left) angles.push({ role: "left", url: sideViews.left.url, yaw: -30 });
+      if (sideViews.right) angles.push({ role: "right", url: sideViews.right.url, yaw: 30 });
+
+      let renders = new Map<string, string>();
+      try {
+        renders = await renderHeads(
+          { ...matchMeta, size: 512 },
+          [
+            ...angles.map((angle) => reshapedRenderRequest(angle.role, sliders, { yaw: angle.yaw, textured: true })),
+            // A steep profile so the model can judge DEPTH -- nose projection, chin position, brow ridge --
+            // which the front/±30 views hide. This is the depth view; without it the model rated a nose it
+            // could not see was over-projected.
+            reshapedRenderRequest("__vprofile", sliders, { yaw: 80, textured: true })
+          ]
+        );
+      } catch {
+        renders = new Map();
+      }
+
+      const images: VisionImagePayload[] = [];
+      for (const angle of angles) {
+        images.push({ label: `Target photo — ${angle.role}`, dataUrl: await resizeImageUrlForVision(angle.url) });
+        const render = renders.get(angle.role);
+        if (render) images.push({ label: `Current render — ${angle.role}`, dataUrl: render });
+      }
+      const profileRender = renders.get("__vprofile");
+      if (profileRender) images.push({ label: "Current render — profile (depth: nose & chin projection)", dataUrl: profileRender });
+      const sliderContext = Object.entries(sliders)
+        .filter(([, value]) => Number.isFinite(value) && Math.abs(value) > 0.01)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, value]) => `${name}: ${value.toFixed(2)}`)
+        .join("\n");
+      return { images, sliderContext };
+    },
+    [photoUrl, sideViews, matchMeta]
+  );
+
   const runVisionRefinement = useCallback(async () => {
     if (!nativeAvailable) {
       setError("Vision refinement is available in the packaged Windows app.");
@@ -1012,12 +1237,13 @@ export default function App() {
           (assessedStyle.kind === "stylized" ? "interpret" : "refine")
         : "interpret";
       pendingVisionMode.current = visionMode;
+      pendingVisionAssess.current = false;
       setIsRefining(true);
       setError(null);
       setNotice(
-        `Preparing a reduced portrait for one-time vision ${visionMode === "interpret" ? "interpretation" : "refinement"}…`
+        `Preparing your photos and current render for one-time vision ${visionMode === "interpret" ? "interpretation" : "refinement"}…`
       );
-      const imageDataUrl = await resizeImageForVision(photoFile);
+      const { images, sliderContext } = await buildVisionPayload(values);
       postNative({
         type: "vision-analyze",
         provider: vision.provider,
@@ -1027,7 +1253,8 @@ export default function App() {
         sourceKind: assessedStyle.kind,
         analysisMode: visionMode,
         hasLocalAnalysis: visionMode === "refine",
-        imageDataUrl
+        images,
+        sliderContext
       });
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Vision preparation failed.";
@@ -1038,14 +1265,75 @@ export default function App() {
   }, [
     analysis,
     analysisReliability,
+    buildVisionPayload,
     imageElement,
     nativeAvailable,
     photoFile,
     providerStatuses,
     sourceMode,
     styleAssessment,
+    values,
     vision
   ]);
+
+  /**
+   * "Analyze fit" — a read-only critique of the CURRENT sliders (after a manual tweak), so the user
+   * can tell whether it got better or worse. Shows both the objective measured loss (computed in the
+   * Match pane) and the model's 0-100 rating plus short comments. Never changes a slider.
+   */
+  const runAnalyzeFit = useCallback(async () => {
+    if (!nativeAvailable) {
+      setError("Fit analysis is available in the packaged Windows app.");
+      return;
+    }
+    if (!photoUrl) {
+      setError("Analyze a photo first, then use Analyze fit.");
+      return;
+    }
+    if (!vision.enabled || !vision.consent) {
+      setSettingsOpen(true);
+      setError("Enable vision and confirm one-request photo-upload consent.");
+      return;
+    }
+    if (vision.provider === "openrouter" && (!vision.apiKey.trim() || !vision.model.trim())) {
+      setSettingsOpen(true);
+      setError("Enter the OpenRouter API key and image-capable model ID.");
+      return;
+    }
+    const cliStatus = providerStatuses.find((item) => item.id === vision.provider);
+    if (vision.provider !== "openrouter" && !cliStatus?.installed) {
+      setSettingsOpen(true);
+      setError("Install and connect the selected provider’s official CLI first.");
+      return;
+    }
+    try {
+      pendingVisionAssess.current = true;
+      setFitAssessment(null);
+      setAssessing(true);
+      setError(null);
+      setNotice("Rendering the current preset and asking the model to rate the fit…");
+      const { images, sliderContext } = await buildVisionPayload(values);
+      postNative({
+        type: "vision-analyze",
+        provider: vision.provider,
+        apiKey: vision.apiKey,
+        model: vision.model.trim(),
+        consent: vision.consent,
+        sourceKind: "photo",
+        analysisMode: "refine",
+        hasLocalAnalysis: true,
+        assess: true,
+        images,
+        sliderContext
+      });
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "Fit analysis failed.";
+      setAssessing(false);
+      pendingVisionAssess.current = false;
+      setError(message);
+      setNotice(message);
+    }
+  }, [buildVisionPayload, nativeAvailable, photoUrl, providerStatuses, values, vision]);
 
   const changeSlider = useCallback(
     (name: string, displayedValue: number) => {
@@ -1074,7 +1362,7 @@ export default function App() {
       (Boolean(template?.companions?.hasNif && template.companions.hasDds) &&
         permissionConfirmed));
 
-  const exportPackage = useCallback(() => {
+  const exportPackage = useCallback(async () => {
     if (!template || groups.length === 0) {
       setError("Analyze a portrait before exporting.");
       return;
@@ -1092,12 +1380,19 @@ export default function App() {
       const scaled = Object.fromEntries(
         Object.entries(values).map(([name, raw]) => [name, clampSlider(raw * likeness)])
       );
+      // Convert the sculpt reshape (elongation / nose-forward / jaw-lift the preview shows, which the
+      // capped EFM sliders cannot reach) into per-vertex sculpt deltas, so the exported head matches
+      // the preview in-game. Only when a reshape is actually present and the native renderer is here.
+      const hasReshape = (RESHAPE_KEYS as readonly string[]).some((key) => Math.abs(scaled[key] ?? 0) > 1e-6);
+      const sculpt = nativeAvailable && hasReshape
+        ? await computeSculpt(matchMeta, scaled).catch(() => null)
+        : null;
       const output = buildRaceMenuPreset(
         template,
         scaled,
         preserveSculpt,
         selectedAppearance,
-        { highPolyHead: highPolyHeadActive, targetSex }
+        { highPolyHead: highPolyHeadActive, targetSex, sculpt }
       );
       const contents = serializeRaceMenuPreset(output);
       if (nativeAvailable) {
@@ -1126,6 +1421,7 @@ export default function App() {
   }, [
     groups.length,
     likeness,
+    matchMeta,
     nativeAvailable,
     outputMode,
     permissionConfirmed,
@@ -1331,11 +1627,21 @@ export default function App() {
           onRefine={runVisionRefinement}
           onImageReady={setImageElement}
         />
-        <AnalysisPanel
-          landmarks={landmarks}
-          analysis={analysis}
-          reliability={analysisReliability}
-          styleAssessment={styleAssessment}
+        <MatchPanel
+          meta={matchMeta}
+          nativeAvailable={nativeAvailable}
+          indexed={Boolean(environment)}
+          initialSources={referenceSources}
+          currentSliders={values}
+          likeness={likeness}
+          sliderNames={fitSliderNames}
+          baselines={matchBaselines}
+          onApplyFit={(fitted) =>
+            setValues((current) => ({ ...current, ...fitted }))
+          }
+          onAnalyzeFit={runAnalyzeFit}
+          assessing={assessing}
+          assessment={fitAssessment}
           error={error}
         />
         <OutputPanel
@@ -1440,6 +1746,22 @@ export default function App() {
           providerStatuses={providerStatuses}
           onVisionChange={setVision}
           onIndex={() => postNative({ type: "index-environment" })}
+          mo2={mo2}
+          onMo2ModsPathChange={(path) =>
+            setMo2((current) => ({ ...current, modsPath: path }))
+          }
+          onMo2Browse={() => postNative({ type: "browse-mo2-mods" })}
+          onMo2ListProfiles={(path) =>
+            postNative({ type: "mo2-list-profiles", path })
+          }
+          onMo2ProfileChange={(profile) => {
+            storeMo2("faceforge.mo2.profile", profile);
+            setMo2((current) => ({ ...current, profile }));
+          }}
+          onMo2Index={(modsPath, profile) => {
+            setIsIndexing(true);
+            postNative({ type: "index-mo2", modsPath, profile });
+          }}
           onLoadIndexedPreset={(id) => postNative({ type: "load-indexed-template", id })}
           onConnectProvider={(provider) =>
             postNative({ type: "connect-vision-provider", provider })

@@ -23,19 +23,18 @@ public static class BsaIndex
     /// Archive filenames that declare a facegenmorphs folder. Non-empty means the loose-file morph
     /// registry is incomplete and cannot prove any slider dead.
     /// </summary>
-    public static IReadOnlyList<string> ArchivesWithMorphRegistrations(string gameDataPath)
+    public static IReadOnlyList<string> ArchivesWithMorphRegistrations(ResolvedDataView view)
     {
         var results = new List<string>();
-        if (!Directory.Exists(gameDataPath)) return results;
 
-        foreach (var archive in Directory.EnumerateFiles(gameDataPath, "*.bsa", SearchOption.TopDirectoryOnly))
+        foreach (var (relPath, archive) in view.Files("", "*.bsa", recursive: false))
         {
             try
             {
                 if (ReadFolderNames(archive).Any(name =>
                         name.StartsWith(MorphsFolder, StringComparison.OrdinalIgnoreCase)))
                 {
-                    results.Add(Path.GetFileName(archive));
+                    results.Add(Path.GetFileName(relPath));
                 }
             }
             catch

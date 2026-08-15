@@ -26,7 +26,7 @@ internal static class EmbeddedWebBundle
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "FaceForge",
             "Web",
-            "0.24.3");
+            "0.24.28");
         var cacheRoot = Path.Combine(cacheParent, hash);
         var indexPath = Path.Combine(cacheRoot, "index.html");
         if (File.Exists(indexPath)) return cacheRoot;

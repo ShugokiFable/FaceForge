@@ -30,6 +30,10 @@ FaceForge-*-win-x64.zip
 GPT_SECRET_KEY.txt
 **/appsettings.*.local.json
 
+# Personal reference/test photos (kept local, not published)
+Gadot faces *.png
+ChatGPT Image*.png
+
 # Game masters (never ship)
 Skyrim.esm
 Update.esm

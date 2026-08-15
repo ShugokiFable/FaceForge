@@ -1,4 +1,5 @@
 import { EFM_RANGE } from "./faceAnalysis";
+import { RESHAPE_KEYS, type SculptResult } from "./headRender";
 import { hphSculptHostShell } from "./hphCalibration";
 import type { TargetSex } from "./headPartPreferences";
 import { FAMILY_RANGE, familyOf, INDEX_SLIDERS } from "./sliderCatalog";
@@ -223,6 +224,8 @@ export function buildRaceMenuPreset(
   options: {
     highPolyHead?: boolean;
     targetSex?: TargetSex;
+    /** Per-vertex sculpt deltas from the reshape (elongation / nose-forward / jaw-lift); written verbatim. */
+    sculpt?: SculptResult | null;
   } = {}
 ): JsonObject {
   const output = structuredClone(template.document);
@@ -240,6 +243,9 @@ export function buildRaceMenuPreset(
   }
 
   for (const [name, value] of Object.entries(sliders)) {
+    // The sculpt reshape sentinels are not morphs; they are converted to sculpt deltas by the export
+    // (or dropped until that lands) and must never be written into morphs.custom.
+    if ((RESHAPE_KEYS as readonly string[]).includes(name)) continue;
     // Only families FaceForge has established a range for, and never the integer type selectors,
     // whose values pick a numbered shape rather than scaling a morph.
     if (familyOf(name) === null || INDEX_SLIDERS.has(name)) {
@@ -255,7 +261,17 @@ export function buildRaceMenuPreset(
     ...passthrough
   ];
 
-  if (preserveSculpt) {
+  if (options.sculpt && options.sculpt.entries.length > 0) {
+    // The reshape (elongation / nose-forward / jaw-lift) computed against the real head, written as
+    // per-vertex sculpt deltas so the in-game head matches the preview. This is non-destructive: it
+    // lives only in the preset, so loading a different preset or resetting sculpt reverts it.
+    morphs.sculpt = options.sculpt.entries.map((entry) => ({
+      host: entry.host,
+      vertices: entry.vertices,
+      data: entry.data
+    }));
+    morphs.sculptDivisor = options.sculpt.divisor;
+  } else if (preserveSculpt) {
     // Keep whatever sculpt the template already carried (inherited character base).
   } else if (options.highPolyHead) {
     // D-004: hosts only, empty data. Authors finish likeness in RaceMenu Sculpt / F5-F9.

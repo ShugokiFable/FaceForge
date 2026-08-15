@@ -194,7 +194,9 @@ public sealed record VisionResult(
     string Model,
     double Confidence,
     IReadOnlyList<string> Observations,
-    IReadOnlyDictionary<string, double> SliderDeltas);
+    IReadOnlyDictionary<string, double> SliderDeltas,
+    /// <summary>0-100 match rating the model gives in "assess" mode (read-only fit critique); null for refine/interpret.</summary>
+    int? FitScore = null);
 
 public sealed record ExportRequest(
     string Mode,

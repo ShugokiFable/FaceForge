@@ -9,36 +9,25 @@ public static class CharGenCatalog
     private static readonly string[] IgnorableSuffixes =
         ["head", "replacer", "sculpt", "preset", "chargen", "export", "final", "face"];
 
-    public static IReadOnlyList<IndexedPreset> Discover(string gameDataPath)
-    {
-        var charGen = Path.Combine(gameDataPath, "SKSE", "Plugins", "CharGen");
-        if (!Directory.Exists(charGen)) return [];
+    /// <summary>Convenience overload for a real Data folder (a direct install or Vortex deployment).</summary>
+    public static IReadOnlyList<IndexedPreset> Discover(string gameDataPath) =>
+        Discover(ResolvedDataView.Physical(gameDataPath));
 
-        var companionGroups = new[]
+    public static IReadOnlyList<IndexedPreset> Discover(ResolvedDataView view)
+    {
+        const string charGen = @"SKSE\Plugins\CharGen";
+        var presetDirs = new[]
         {
-            new CompanionGroup("preset", charGen),
-            new CompanionGroup("exported", Path.Combine(charGen, "Exported"))
+            (RelDir: charGen + @"\Presets", CompanionRelDir: charGen, Layout: "preset"),
+            (RelDir: charGen + @"\Exported", CompanionRelDir: charGen + @"\Exported", Layout: "exported"),
+            (RelDir: charGen, CompanionRelDir: charGen, Layout: "preset")
         };
 
         var results = new List<IndexedPreset>();
-        foreach (var presetDir in new[]
-                 {
-                     Path.Combine(charGen, "Presets"),
-                     Path.Combine(charGen, "Exported"),
-                     charGen
-                 })
+        foreach (var (relDir, companionRelDir, layout) in presetDirs)
         {
-            if (!Directory.Exists(presetDir)) continue;
-            foreach (var jslot in Directory.EnumerateFiles(presetDir, "*.jslot", SearchOption.TopDirectoryOnly))
-            {
-                var group = string.Equals(
-                    Path.GetFileName(presetDir),
-                    "Exported",
-                    StringComparison.OrdinalIgnoreCase)
-                    ? companionGroups[1]
-                    : companionGroups[0];
-                results.Add(InspectTemplate(jslot, group.Directory, group.Layout));
-            }
+            foreach (var (_, jslotAbs) in view.Files(relDir, "*.jslot", recursive: false))
+                results.Add(InspectTemplateFromView(view, jslotAbs, companionRelDir, layout));
         }
 
         return results
@@ -82,6 +71,59 @@ public static class CharGenCatalog
             layout,
             metadata.Dependencies,
             metadata.SculptHostCount);
+    }
+
+    private static IndexedPreset InspectTemplateFromView(
+        ResolvedDataView view,
+        string jslotPath,
+        string companionRelDir,
+        string layout)
+    {
+        var metadata = ReadMetadata(jslotPath);
+        var stem = Path.GetFileNameWithoutExtension(jslotPath);
+        var pair = FindCompanionsFromView(view, stem, companionRelDir);
+        return new IndexedPreset(
+            StableId(Path.GetFullPath(jslotPath)),
+            Path.GetFileName(jslotPath),
+            Path.GetFullPath(jslotPath),
+            pair.Nif,
+            pair.Dds,
+            layout,
+            metadata.Dependencies,
+            metadata.SculptHostCount);
+    }
+
+    /// <summary>
+    /// The view-backed companion search: the CharGen NIF/DDS may live in any mod that provides that
+    /// path in the MO2 overlay, so it is resolved through the view rather than a single folder.
+    /// </summary>
+    private static (string? Nif, string? Dds) FindCompanionsFromView(
+        ResolvedDataView view,
+        string stem,
+        string companionRelDir)
+    {
+        var nifs = view.Files(companionRelDir, "*.nif", recursive: false).ToList();
+        var selected = nifs.FirstOrDefault(item =>
+            string.Equals(
+                Path.GetFileNameWithoutExtension(item.RelPath), stem, StringComparison.OrdinalIgnoreCase));
+
+        if (selected.AbsolutePath is null)
+        {
+            var key = NormalizeKey(stem);
+            var candidates = nifs.Where(item =>
+                    string.Equals(
+                        NormalizeKey(Path.GetFileNameWithoutExtension(item.RelPath)),
+                        key,
+                        StringComparison.Ordinal))
+                .ToList();
+            if (candidates.Count == 1) selected = candidates[0];
+        }
+
+        if (selected.AbsolutePath is null) return (null, null);
+        var ddsRel = Path.ChangeExtension(selected.RelPath, ".dds");
+        return (
+            Path.GetFullPath(selected.AbsolutePath),
+            view.TryResolve(ddsRel, out var ddsAbs) ? Path.GetFullPath(ddsAbs) : null);
     }
 
     public static (IReadOnlyList<string> Dependencies, int SculptHostCount) ReadMetadata(
@@ -179,9 +221,13 @@ public static class CharGenCatalog
     /// Finds the preset whose CharGen NIF/DDS Skyrim has already baked, which is the only form
     /// FollowerForge can consume. Returns null while the round trip is incomplete.
     /// </summary>
-    public static IndexedPreset? FindBakedHead(string gameDataPath, string name)
+    /// <summary>Convenience overload for a real Data folder (a direct install or Vortex deployment).</summary>
+    public static IndexedPreset? FindBakedHead(string gameDataPath, string name) =>
+        FindBakedHead(ResolvedDataView.Physical(gameDataPath), name);
+
+    public static IndexedPreset? FindBakedHead(ResolvedDataView view, string name)
     {
-        var complete = Discover(gameDataPath)
+        var complete = Discover(view)
             .Where(item => item.HasNif && item.HasDds)
             .ToList();
         var stem = Path.GetFileNameWithoutExtension(name);
@@ -227,6 +273,4 @@ public static class CharGenCatalog
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(value.ToUpperInvariant()));
         return Convert.ToHexString(hash)[..16];
     }
-
-    private sealed record CompanionGroup(string Layout, string Directory);
 }

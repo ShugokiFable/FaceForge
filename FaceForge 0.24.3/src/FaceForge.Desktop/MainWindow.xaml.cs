@@ -42,6 +42,48 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        // A borderless (WindowStyle=None) window maximizes over the whole screen, covering the taskbar
+        // and clipping the footer's export button. Constrain the maximized size to the monitor work area.
+        SourceInitialized += (_, _) =>
+            HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(MaximizeHook);
+    }
+
+    private const int WmGetMinMaxInfo = 0x0024;
+    private const uint MonitorDefaultToNearest = 0x00000002;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr handle, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo { public int Size; public Rect Monitor; public Rect Work; public uint Flags; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Point { public int X, Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo { public Point Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize; }
+
+    private static IntPtr MaximizeHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg != WmGetMinMaxInfo) return IntPtr.Zero;
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+        if (monitor == IntPtr.Zero) return IntPtr.Zero;
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(monitor, ref info)) return IntPtr.Zero;
+        var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+        mmi.MaxPosition.X = info.Work.Left - info.Monitor.Left;
+        mmi.MaxPosition.Y = info.Work.Top - info.Monitor.Top;
+        mmi.MaxSize.X = info.Work.Right - info.Work.Left;
+        mmi.MaxSize.Y = info.Work.Bottom - info.Work.Top;
+        Marshal.StructureToPtr(mmi, lParam, true);
+        handled = true;
+        return IntPtr.Zero;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -181,6 +223,17 @@ public partial class MainWindow : Window
                 case "index-environment":
                     await IndexEnvironmentAsync();
                     break;
+                case "browse-mo2-mods":
+                    BrowseMo2Mods();
+                    break;
+                case "mo2-list-profiles":
+                    ListMo2Profiles(root.TryGetProperty("path", out var pathElement)
+                        ? pathElement.GetString()
+                        : null);
+                    break;
+                case "index-mo2":
+                    await IndexMo2Async(root);
+                    break;
                 case "choose-template":
                     ChooseTemplate();
                     break;
@@ -199,6 +252,12 @@ public partial class MainWindow : Window
                 case "resolve-dependencies":
                     ResolveDependencies(ReadStringArray(root, "dependencies"));
                     break;
+                case "render-heads":
+                    await RenderHeadsAsync(root);
+                    break;
+                case "compute-sculpt":
+                    await ComputeSculptAsync(root);
+                    break;
                 case "vision-provider-status":
                     Post("vision-provider-status", CliVisionProvider.GetStatuses());
                     break;
@@ -213,6 +272,9 @@ public partial class MainWindow : Window
                     break;
                 case "export-package":
                     ExportPackage(root);
+                    break;
+                case "save-debug":
+                    SaveDebug(root);
                     break;
             }
         }
@@ -243,6 +305,80 @@ public partial class MainWindow : Window
         _catalog = await Task.Run(() =>
             EnvironmentCatalog.Build(dataPath, "manual selection", autoDetected: false));
         Post("environment-indexed", _catalog.Summary);
+    }
+
+    /// <summary>
+    /// Opens a folder picker for the MO2 mods folder, then immediately lists the instance's profiles
+    /// so the user does not have to type the path.
+    /// </summary>
+    private void BrowseMo2Mods()
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Choose your MO2 mods folder (for example E:\\MO2\\mods)",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        ListMo2Profiles(dialog.FolderName);
+    }
+
+    /// <summary>
+    /// Resolves the MO2 instance around a mods folder and reports its profiles and managed game path
+    /// back to the interface, so the profile dropdown can be populated.
+    /// </summary>
+    private void ListMo2Profiles(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            Post("mo2-error", new { message = "Enter the path to your MO2 mods folder first." });
+            return;
+        }
+        try
+        {
+            var layout = Mo2Environment.Inspect(path);
+            Post("mo2-profiles", new
+            {
+                modsPath = layout.ModsPath,
+                profilesDir = layout.ProfilesDir,
+                gameDataPath = layout.GameDataPath,
+                profiles = layout.Profiles
+            });
+        }
+        catch (Exception exception)
+        {
+            Post("mo2-error", new { message = SafeError(exception) });
+        }
+    }
+
+    /// <summary>
+    /// Builds the environment index from an MO2 profile: the enabled mods, in priority order, with
+    /// only the profile's active plugins counted as installed.
+    /// </summary>
+    private async Task IndexMo2Async(JsonElement root)
+    {
+        var modsPath = root.TryGetProperty("modsPath", out var modsElement)
+            ? modsElement.GetString()
+            : null;
+        var profile = root.TryGetProperty("profile", out var profileElement)
+            ? profileElement.GetString()
+            : null;
+        if (string.IsNullOrWhiteSpace(modsPath) || string.IsNullOrWhiteSpace(profile))
+        {
+            Post("mo2-error", new { message = "Choose the MO2 mods folder and a profile before indexing." });
+            return;
+        }
+
+        Post("index-started", new { automatic = false, mo2 = true, profile });
+        try
+        {
+            _catalog = await Task.Run(() =>
+                EnvironmentCatalog.BuildFromMo2(Mo2Environment.BuildOverlay(modsPath, profile)));
+            Post("environment-indexed", _catalog.Summary);
+        }
+        catch (Exception exception)
+        {
+            Post("mo2-error", new { message = SafeError(exception) });
+        }
     }
 
     private async Task AutoIndexEnvironmentAsync()
@@ -314,14 +450,14 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(name))
             throw new InvalidOperationException("Give the preset a name before checking for its baked head.");
 
-        var data = _catalog.Summary.GameDataPath;
-        var baked = CharGenCatalog.FindBakedHead(data, name);
+        var baked = _catalog.FindBakedHead(name);
         if (baked is null)
         {
             Post("baked-head-missing", new
             {
                 name,
-                expectedNif = Path.Combine(data, "SKSE", "Plugins", "CharGen", name + ".nif")
+                expectedNif = Path.Combine(
+                    _catalog.View.WriteRoot, "SKSE", "Plugins", "CharGen", name + ".nif")
             });
             return;
         }
@@ -345,7 +481,7 @@ public partial class MainWindow : Window
             Multiselect = false,
             InitialDirectory = _catalog is null
                 ? null
-                : Path.Combine(_catalog.Summary.GameDataPath, "SKSE", "Plugins", "CharGen", "Presets")
+                : Path.Combine(_catalog.View.WriteRoot, "SKSE", "Plugins", "CharGen", "Presets")
         };
         if (dialog.ShowDialog(this) != true) return;
 
@@ -356,6 +492,133 @@ public partial class MainWindow : Window
         Post("preset-inspected", report);
         Post("template-loaded", CharGenCatalog.Load(_selectedPreset));
     }
+
+    /// <summary>
+    /// Renders the player's actual chargen head for a batch of (slider set, pose) requests and returns
+    /// the images as data URLs. This is the forward model the frontend "Analyze &amp; improve" loop drives:
+    /// it renders candidate slider sets at each uploaded photo's pose, then measures the render with the
+    /// same MediaPipe pipeline the photos use. Batched so an optimizer step is one round trip.
+    /// </summary>
+    private async Task RenderHeadsAsync(JsonElement root)
+    {
+        if (_catalog is null)
+        {
+            Post("heads-rendered", new { requestId = ReadRequestId(root), images = Array.Empty<object>(), error = "Index Skyrim first." });
+            return;
+        }
+
+        var sex = root.TryGetProperty("sex", out var sexElement) &&
+                  string.Equals(sexElement.GetString(), "male", StringComparison.OrdinalIgnoreCase)
+            ? "male" : "female";
+        var highPoly = root.TryGetProperty("highPoly", out var hp) && hp.ValueKind == JsonValueKind.True;
+        var race = root.TryGetProperty("race", out var raceElement) && raceElement.ValueKind == JsonValueKind.String
+            ? raceElement.GetString()
+            : null;
+        var size = root.TryGetProperty("size", out var sizeElement) && sizeElement.TryGetInt32(out var s)
+            ? Math.Clamp(s, 128, 768)
+            : 384;
+
+        var requests = new List<(string Id, Dictionary<string, double> Sliders, double Yaw, double Pitch, bool Textured, double WidthScale, double HeightScale, double NoseForward, double JawRaise)>();
+        if (root.TryGetProperty("requests", out var requestArray) && requestArray.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in requestArray.EnumerateArray())
+            {
+                if (requests.Count >= 300) break; // a runaway-loop backstop
+                var id = item.TryGetProperty("id", out var idElement) ? idElement.GetString() ?? "" : "";
+                var yaw = item.TryGetProperty("yaw", out var yawElement) && yawElement.TryGetDouble(out var y) ? y : 0;
+                var pitch = item.TryGetProperty("pitch", out var pitchElement) && pitchElement.TryGetDouble(out var p)
+                    ? p : double.NaN;
+                var textured = item.TryGetProperty("textured", out var texturedElement) && texturedElement.ValueKind == JsonValueKind.True;
+                var widthScale = item.TryGetProperty("faceWidthScale", out var fwElement) && fwElement.TryGetDouble(out var fw) ? fw : 1.0;
+                var heightScale = item.TryGetProperty("faceHeightScale", out var fhElement) && fhElement.TryGetDouble(out var fh) ? fh : 1.0;
+                var noseForward = item.TryGetProperty("noseForward", out var nfElement) && nfElement.TryGetDouble(out var nf) ? nf : 0.0;
+                var jawRaise = item.TryGetProperty("jawRaise", out var jrElement) && jrElement.TryGetDouble(out var jr) ? jr : 0.0;
+                var sliders = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                if (item.TryGetProperty("sliders", out var sliderObject) && sliderObject.ValueKind == JsonValueKind.Object)
+                    foreach (var property in sliderObject.EnumerateObject())
+                        if (property.Value.TryGetDouble(out var value)) sliders[property.Name] = value;
+                requests.Add((id, sliders, yaw, pitch, textured, widthScale, heightScale, noseForward, jawRaise));
+            }
+        }
+
+        var view = _catalog.View;
+        var morphInfo = _catalog.Summary.MorphRegistry;
+        var bsaMorphs = _catalog.BsaMorphs;
+        var images = await Task.Run(() =>
+        {
+            var results = new (string Id, string? DataUrl)[requests.Count];
+            Parallel.For(0, requests.Count, index =>
+            {
+                var (id, sliders, yaw, pitch, textured, widthScale, heightScale, noseForward, jawRaise) = requests[index];
+                var png = HeadRenderer.RenderPng(view, morphInfo,
+                    new HeadRenderer.RenderRequest(sex, highPoly, race, sliders, yaw, pitch, size, textured,
+                        widthScale, heightScale, noseForward, jawRaise), bsaMorphs);
+                results[index] = (id, png is null ? null : "data:image/png;base64," + Convert.ToBase64String(png));
+            });
+            return results;
+        });
+
+        Post("heads-rendered", new
+        {
+            requestId = ReadRequestId(root),
+            images = images
+                .Where(item => item.DataUrl is not null)
+                .Select(item => new { id = item.Id, dataUrl = item.DataUrl })
+        });
+    }
+
+    /// <summary>
+    /// Converts the reshape carried on the export slider set into RaceMenu sculpt deltas for the head,
+    /// eyes and brows, so the elongation / nose-forward / jaw-lift the preview shows are written into
+    /// the exported preset and appear in-game. Mirrors the render-heads request shape.
+    /// </summary>
+    private async Task ComputeSculptAsync(JsonElement root)
+    {
+        var requestId = ReadRequestId(root);
+        if (_catalog is null)
+        {
+            Post("sculpt-computed", new { requestId, sculpt = Array.Empty<object>(), divisor = 10000, error = "Index Skyrim first." });
+            return;
+        }
+
+        var sex = root.TryGetProperty("sex", out var sexElement) &&
+                  string.Equals(sexElement.GetString(), "male", StringComparison.OrdinalIgnoreCase)
+            ? "male" : "female";
+        var highPoly = root.TryGetProperty("highPoly", out var hp) && hp.ValueKind == JsonValueKind.True;
+        var race = root.TryGetProperty("race", out var raceElement) && raceElement.ValueKind == JsonValueKind.String
+            ? raceElement.GetString()
+            : null;
+        double Reshape(string name, double fallback) =>
+            root.TryGetProperty(name, out var element) && element.TryGetDouble(out var value) ? value : fallback;
+        var sliders = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty("sliders", out var sliderObject) && sliderObject.ValueKind == JsonValueKind.Object)
+            foreach (var property in sliderObject.EnumerateObject())
+                if (property.Value.TryGetDouble(out var value)) sliders[property.Name] = value;
+
+        var request = new HeadRenderer.RenderRequest(sex, highPoly, race, sliders,
+            FaceWidthScale: Reshape("faceWidthScale", 1.0),
+            FaceHeightScale: Reshape("faceHeightScale", 1.0),
+            NoseForward: Reshape("noseForward", 0.0),
+            JawRaise: Reshape("jawRaise", 0.0));
+
+        var view = _catalog.View;
+        var morphInfo = _catalog.Summary.MorphRegistry;
+        var bsaMorphs = _catalog.BsaMorphs;
+        var sculpt = await Task.Run(() => HeadRenderer.ComputeSculpt(view, morphInfo, request, bsaMorphs));
+
+        Post("sculpt-computed", new
+        {
+            requestId,
+            divisor = 10000,
+            sculpt = (sculpt ?? new List<HeadRenderer.SculptPart>())
+                .Select(part => new { host = part.Host, vertices = part.Vertices, data = part.Data })
+        });
+    }
+
+    private static string ReadRequestId(JsonElement root) =>
+        root.TryGetProperty("requestId", out var element) && element.ValueKind == JsonValueKind.String
+            ? element.GetString() ?? ""
+            : "";
 
     private void ResolveDependencies(IReadOnlyList<string> dependencies)
     {
@@ -381,7 +644,34 @@ public partial class MainWindow : Window
         if (!root.GetProperty("consent").GetBoolean())
             throw new InvalidOperationException("Photo upload consent is required for vision refinement.");
         var provider = root.GetProperty("provider").GetString() ?? "";
-        var image = root.GetProperty("imageDataUrl").GetString() ?? "";
+
+        // New multi-image payload: the target photo AND FaceForge's current render, each labelled,
+        // from up to three angles, plus the current slider values -- so the model sees the gap. Falls
+        // back to the legacy single "imageDataUrl" when the frontend sends only the photo.
+        var images = new List<OpenRouterVision.VisionImage>();
+        if (root.TryGetProperty("images", out var imagesElement) && imagesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in imagesElement.EnumerateArray())
+            {
+                var label = item.TryGetProperty("label", out var labelElement) ? labelElement.GetString() ?? "" : "";
+                var url = item.TryGetProperty("dataUrl", out var urlElement) ? urlElement.GetString() ?? "" : "";
+                if (!string.IsNullOrEmpty(url)) images.Add(new OpenRouterVision.VisionImage(label, url));
+            }
+        }
+        else if (root.TryGetProperty("imageDataUrl", out var single) && single.ValueKind == JsonValueKind.String)
+        {
+            images.Add(new OpenRouterVision.VisionImage("Target portrait (front)", single.GetString() ?? ""));
+        }
+        if (images.Count == 0)
+            throw new InvalidOperationException("No image was supplied for vision analysis.");
+
+        var sliderContext = root.TryGetProperty("sliderContext", out var sliderElement) &&
+                            sliderElement.ValueKind == JsonValueKind.String
+            ? sliderElement.GetString()
+            : null;
+        var assess = root.TryGetProperty("assess", out var assessElement) &&
+                     assessElement.ValueKind == JsonValueKind.True;
+
         // The frontend already knows whether local landmarks succeeded and whether the source is
         // stylized. Both change what the model should be asked for and how far it may move a
         // value, so they must reach the request rather than being dropped here.
@@ -397,14 +687,15 @@ public partial class MainWindow : Window
         var context = new OpenRouterVision.VisionContext(
             trustedLocalAnalysis,
             root.TryGetProperty("sourceKind", out var kindElement) &&
-            string.Equals(kindElement.GetString(), "stylized", StringComparison.OrdinalIgnoreCase));
+            string.Equals(kindElement.GetString(), "stylized", StringComparison.OrdinalIgnoreCase),
+            assess);
 
         if (provider.Equals("openrouter", StringComparison.OrdinalIgnoreCase))
         {
             var apiKey = root.GetProperty("apiKey").GetString() ?? "";
             var model = root.GetProperty("model").GetString() ?? "";
             Post("vision-started", new { model });
-            var openRouterResult = await _openRouterVision.AnalyzeAsync(apiKey, model, image, context);
+            var openRouterResult = await _openRouterVision.AnalyzeAsync(apiKey, model, images, sliderContext, context);
             Post("vision-complete", openRouterResult);
             return;
         }
@@ -412,7 +703,7 @@ public partial class MainWindow : Window
             throw new InvalidOperationException("Choose a supported vision provider.");
         var status = CliVisionProvider.GetStatus(kind);
         Post("vision-started", new { model = status.DisplayName });
-        var result = await _cliVision.AnalyzeAsync(kind, image, context);
+        var result = await _cliVision.AnalyzeAsync(kind, images, sliderContext, context);
         Post("vision-complete", result);
     }
 
@@ -460,6 +751,56 @@ public partial class MainWindow : Window
             FileName = url,
             UseShellExecute = true
         });
+    }
+
+    // DEBUG TRACE sink: writes one fit pass's renders + numeric log to Documents\FaceForge Debug\<base>\.
+    // Gated on the frontend by the fit.ts DEBUG constant; here it just persists whatever it is handed.
+    private void SaveDebug(JsonElement root)
+    {
+        var baseName = Sanitize(root.TryGetProperty("baseName", out var bn) ? bn.GetString() : null) ?? "fit";
+        var pass = root.TryGetProperty("pass", out var pe) && pe.TryGetInt32(out var p) ? p : 0;
+        var reset = root.TryGetProperty("reset", out var re) && re.ValueKind == JsonValueKind.True;
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "FaceForge Debug", baseName);
+        if (reset && Directory.Exists(dir))
+        {
+            try { Directory.Delete(dir, true); } catch { /* best effort */ }
+        }
+        Directory.CreateDirectory(dir);
+
+        void WritePng(string prop, string suffix)
+        {
+            if (!root.TryGetProperty(prop, out var el) || el.ValueKind != JsonValueKind.String) return;
+            var bytes = DecodeDataUrl(el.GetString());
+            if (bytes is not null) File.WriteAllBytes(Path.Combine(dir, $"pass{pass:D2}_{suffix}.png"), bytes);
+        }
+        WritePng("front", "front");
+        WritePng("profile", "profile");
+
+        if (root.TryGetProperty("log", out var logEl) && logEl.ValueKind == JsonValueKind.String)
+        {
+            var logPath = Path.Combine(dir, "trace.md");
+            var text = logEl.GetString() ?? "";
+            if (reset) File.WriteAllText(logPath, text);
+            else File.AppendAllText(logPath, text);
+        }
+        Post("debug-saved", new { folder = dir, pass });
+    }
+
+    private static byte[]? DecodeDataUrl(string? dataUrl)
+    {
+        if (string.IsNullOrEmpty(dataUrl)) return null;
+        var comma = dataUrl.IndexOf(',');
+        var b64 = comma >= 0 ? dataUrl[(comma + 1)..] : dataUrl;
+        try { return Convert.FromBase64String(b64); } catch { return null; }
+    }
+
+    private static string? Sanitize(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var cleaned = new string(name.Where(c => !Path.GetInvalidFileNameChars().Contains(c)).ToArray());
+        return string.IsNullOrWhiteSpace(cleaned) ? null : cleaned.Trim();
     }
 
     private void ExportPackage(JsonElement root)

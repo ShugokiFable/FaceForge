@@ -38,14 +38,18 @@ public sealed class TriFile
     private TriFile(
         string path,
         float[] vertices,
+        int[] triangles,
+        float[] uvs,
+        int[] triangleUvs,
         IReadOnlyList<TriMorph> morphs,
-        int triangleCount,
         long trailingBytes)
     {
         Path = path;
         Vertices = vertices;
+        Triangles = triangles;
+        Uvs = uvs;
+        TriangleUvs = triangleUvs;
         Morphs = morphs;
-        TriangleCount = triangleCount;
         TrailingBytes = trailingBytes;
     }
 
@@ -56,7 +60,18 @@ public sealed class TriFile
 
     public int VertexCount => Vertices.Length / 3;
 
-    public int TriangleCount { get; }
+    /// <summary>Triangle vertex indices, three per triangle, into <see cref="Vertices"/>.</summary>
+    public int[] Triangles { get; }
+
+    public int TriangleCount => Triangles.Length / 3;
+
+    /// <summary>Texture coordinates, two floats per UV, or empty when the mesh carries none.</summary>
+    public float[] Uvs { get; }
+
+    /// <summary>Per-triangle UV indices, three per triangle, into <see cref="Uvs"/>.</summary>
+    public int[] TriangleUvs { get; }
+
+    public bool HasUvs => Uvs.Length > 0 && TriangleUvs.Length == Triangles.Length;
 
     public IReadOnlyList<TriMorph> Morphs { get; }
 
@@ -66,9 +81,11 @@ public sealed class TriFile
     /// </summary>
     public long TrailingBytes { get; }
 
-    public static TriFile Read(string path)
+    public static TriFile Read(string path) => Read(File.ReadAllBytes(path), path);
+
+    /// <summary>Parses a .tri from an in-memory buffer (e.g. one extracted from a BSA).</summary>
+    public static TriFile Read(byte[] data, string path)
     {
-        var data = File.ReadAllBytes(path);
         if (data.Length < HeaderLength || !data.AsSpan(0, Magic.Length).SequenceEqual(Magic))
         {
             throw new InvalidDataException($"Not a FRTRI003 file: {path}");
@@ -83,11 +100,13 @@ public sealed class TriFile
 
         var offset = HeaderLength;
         var vertices = ReadFloats(data, ref offset, vertexCount * 3, path);
-        offset += Advance(triangleCount, 3 * sizeof(uint), path);
+        var triangles = ReadIndices(data, ref offset, triangleCount * 3, path);
+        var uvs = Array.Empty<float>();
+        var triangleUvs = Array.Empty<int>();
         if (hasUv)
         {
-            offset += Advance(uvCount, 2 * sizeof(float), path);
-            offset += Advance(triangleCount, 3 * sizeof(uint), path);
+            uvs = ReadFloats(data, ref offset, uvCount * 2, path);
+            triangleUvs = ReadIndices(data, ref offset, triangleCount * 3, path);
         }
 
         var morphs = new List<TriMorph>(morphCount);
@@ -113,7 +132,7 @@ public sealed class TriFile
             morphs.Add(new TriMorph(name, multiplier, deltas));
         }
 
-        return new TriFile(path, vertices, morphs, triangleCount, data.Length - offset);
+        return new TriFile(path, vertices, triangles, uvs, triangleUvs, morphs, data.Length - offset);
     }
 
     public TriMorph? FindMorph(string name) =>
@@ -157,6 +176,16 @@ public sealed class TriFile
             .Cast<byte, float>(data.AsSpan(offset, count * sizeof(float)))
             .ToArray();
         offset += count * sizeof(float);
+        return values;
+    }
+
+    private static int[] ReadIndices(byte[] data, ref int offset, int count, string path)
+    {
+        Require(data, offset, (long)count * sizeof(uint), path, "triangle block");
+        var values = new int[count];
+        var source = MemoryMarshal.Cast<byte, uint>(data.AsSpan(offset, count * sizeof(uint)));
+        for (var index = 0; index < count; index++) values[index] = (int)source[index];
+        offset += count * sizeof(uint);
         return values;
     }
 

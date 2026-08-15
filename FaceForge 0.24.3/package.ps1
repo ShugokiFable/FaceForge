@@ -8,7 +8,7 @@ $snapshotRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $snapshotRoot
 $artifactRoot = Join-Path $snapshotRoot "artifacts"
 $publishRoot = Join-Path $artifactRoot "publish\$Runtime"
-$standaloneName = "FaceForge-0.24.3-STANDALONE.exe"
+$standaloneName = "FaceForge-0.24.28-STANDALONE.exe"
 $artifactExe = Join-Path $artifactRoot $standaloneName
 $shareExe = Join-Path $projectRoot $standaloneName
 $desktopProject = Join-Path $snapshotRoot "src\FaceForge.Desktop\FaceForge.Desktop.csproj"
@@ -49,7 +49,7 @@ Copy-Item -LiteralPath $publishedFiles[0].FullName -Destination $artifactExe -Fo
 Copy-Item -LiteralPath $publishedFiles[0].FullName -Destination $shareExe -Force
 
 # Clean upload name (no spaces) for Nexus/GitHub
-$cleanName = "FaceForge-0.24.3-STANDALONE.exe"
+$cleanName = "FaceForge-0.24.28-STANDALONE.exe"
 $cleanShare = Join-Path $projectRoot $cleanName
 Copy-Item -LiteralPath $publishedFiles[0].FullName -Destination $cleanShare -Force
 Write-Host "Also wrote: $cleanShare"

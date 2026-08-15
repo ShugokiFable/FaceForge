@@ -130,6 +130,10 @@ export const SLIDER_DEFINITIONS: SliderDefinition[] = [
   { name: "EFM_Chin_Width", label: "Chin width", group: "face", source: "chinWidth", sensitivity: 32 },
   { name: "EFM_Chin_Shape", label: "Chin taper", group: "face", source: "chinShape", sensitivity: 20 },
   { name: "EFM_Chin_Height", label: "Chin height", group: "face", source: "lowerFace", sensitivity: 26 },
+  // Chin projection (EFM_Chin_Back .. EFM_Chin_Forward). It is a depth morph a front photo can't
+  // measure, so sensitivity 0 leaves the auto-fit out of it -- it is a manual slider for the profile
+  // (positive = chin forward), which the profile preview now shows.
+  { name: "EFM_Chin_Depth", label: "Chin forward/back", group: "face", source: "chinShape", sensitivity: 0 },
 
   // ---- EFM: eyes and brows -----------------------------------------------------------------
   { name: "EFM_Eyes_Size", label: "Eye size", group: "eyes", source: "eyeWidth", sensitivity: 35 },

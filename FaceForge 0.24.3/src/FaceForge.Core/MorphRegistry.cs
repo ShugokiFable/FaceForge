@@ -76,18 +76,53 @@ public static class MorphRegistry
 
     private sealed record HeadConfiguration(string Sex, bool HighPoly, string[] Parts);
 
-    public static MorphRegistrySnapshot Build(string gameDataPath)
+    /// <summary>The chargen .tri part paths (relative to <c>meshes\</c>) for one head configuration.</summary>
+    public sealed record HeadPartPaths(
+        string Sex,
+        bool HighPoly,
+        string HeadTri,
+        string BrowsTri,
+        string EyesTri,
+        string MouthTri);
+
+    /// <summary>The head configurations FaceForge can render, with their part .tri paths.</summary>
+    public static IReadOnlyList<HeadPartPaths> HeadConfigurations() =>
+        KnownHeads
+            .Select(head => new HeadPartPaths(
+                head.Sex, head.HighPoly, head.Parts[0], head.Parts[1], head.Parts[2], head.Parts[3]))
+            .ToArray();
+
+    /// <summary>One facegenmorphs extension registration, with the extension .tri path resolvable via the view.</summary>
+    public sealed record MorphExtension(string Plugin, string BasePath, string ExtensionRelPath);
+
+    /// <summary>
+    /// The facegenmorphs <c>morphs.ini</c> extension registrations, so a renderer can load the extra
+    /// EFM morph targets attached to each chargen mesh. <see cref="MorphExtension.BasePath"/> is the
+    /// chargen mesh (relative to <c>meshes\</c>) and <see cref="MorphExtension.ExtensionRelPath"/> is
+    /// the extension .tri relative to the Data root.
+    /// </summary>
+    public static IReadOnlyList<MorphExtension> ReadMorphExtensions(ResolvedDataView view) =>
+        ReadExtensions(view)
+            .Select(item => new MorphExtension(
+                item.Plugin,
+                item.BasePath,
+                Path.Combine(MorphsRoot, "Morphs", item.ExtensionPath)))
+            .ToArray();
+
+    /// <summary>Convenience overload for a real Data folder (a direct install or Vortex deployment).</summary>
+    public static MorphRegistrySnapshot Build(string gameDataPath) =>
+        Build(ResolvedDataView.Physical(gameDataPath));
+
+    public static MorphRegistrySnapshot Build(ResolvedDataView view)
     {
-        var root = Path.Combine(gameDataPath, MorphsRoot);
-        var extensions = Directory.Exists(root) ? ReadExtensions(root) : [];
-        var sliderSets = Directory.Exists(root) ? ReadSliderSets(root) : [];
+        var extensions = ReadExtensions(view);
+        var sliderSets = ReadSliderSets(view);
         var heads = new List<HeadMorphProfile>();
 
         foreach (var configuration in KnownHeads)
         {
             var headPath = configuration.Parts[0];
-            var headFull = Path.Combine(gameDataPath, "meshes", headPath);
-            if (!File.Exists(headFull)) continue;
+            if (!view.Exists(Path.Combine("meshes", headPath))) continue;
 
             var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var attached = new List<MorphExtensionInfo>();
@@ -96,8 +131,7 @@ public static class MorphRegistry
 
             foreach (var relative in configuration.Parts)
             {
-                var full = Path.Combine(gameDataPath, "meshes", relative);
-                if (!File.Exists(full))
+                if (!view.TryResolve(Path.Combine("meshes", relative), out var full))
                 {
                     parts.Add(new MorphPartInfo(relative, 0, 0, "chargen .tri not found on disk"));
                     continue;
@@ -118,8 +152,9 @@ public static class MorphRegistry
                 foreach (var extension in extensions)
                 {
                     if (!PathsMatch(extension.BasePath, relative)) continue;
-                    var extensionFull = Path.Combine(root, "Morphs", extension.ExtensionPath);
-                    if (!File.Exists(extensionFull))
+                    if (!view.TryResolve(
+                            Path.Combine(MorphsRoot, "Morphs", extension.ExtensionPath),
+                            out var extensionFull))
                     {
                         attached.Add(new MorphExtensionInfo(
                             extension.ExtensionPath, extension.Plugin, 0, false, 0,
@@ -172,7 +207,7 @@ public static class MorphRegistry
         // loose-file read cannot see. High Poly Head does exactly that. While any such archive is
         // present the registry is a partial view, and a partial view can prove a slider LIVE but
         // never prove one DEAD -- so it must not be used to drop anything.
-        var unreadArchives = BsaIndex.ArchivesWithMorphRegistrations(gameDataPath);
+        var unreadArchives = BsaIndex.ArchivesWithMorphRegistrations(view);
         return new MorphRegistrySnapshot(heads, sliderSets, unreadArchives.Count == 0, unreadArchives);
     }
 
@@ -186,13 +221,13 @@ public static class MorphRegistry
     private static string Normalize(string value) =>
         value.Trim().Trim(',').Trim().Replace('/', '\\').TrimStart('\\');
 
-    private static List<MorphExtensionRegistration> ReadExtensions(string root)
+    private static List<MorphExtensionRegistration> ReadExtensions(ResolvedDataView view)
     {
         var results = new List<MorphExtensionRegistration>();
-        foreach (var directory in Directory.EnumerateDirectories(root))
+        foreach (var directory in view.ChildDirectories(MorphsRoot))
         {
             var plugin = Path.GetFileName(directory);
-            foreach (var ini in Directory.EnumerateFiles(directory, "morphs.ini", SearchOption.TopDirectoryOnly))
+            foreach (var (_, ini) in view.Files(directory, "morphs.ini", recursive: false))
             {
                 foreach (var line in ReadIniLines(ini))
                 {
@@ -217,19 +252,19 @@ public static class MorphRegistry
         return results;
     }
 
-    private static List<MorphSliderSet> ReadSliderSets(string root)
+    private static List<MorphSliderSet> ReadSliderSets(ResolvedDataView view)
     {
         var results = new List<MorphSliderSet>();
-        foreach (var directory in Directory.EnumerateDirectories(root))
+        foreach (var directory in view.ChildDirectories(MorphsRoot))
         {
             var plugin = Path.GetFileName(directory);
-            var races = ReadRaces(directory);
+            var races = ReadRaces(view, directory);
             if (races.Count == 0) continue;
 
             foreach (var group in races.GroupBy(entry => entry.Value, StringComparer.OrdinalIgnoreCase))
             {
-                var iniPath = Path.Combine(directory, group.Key.Replace('/', '\\'));
-                if (!File.Exists(iniPath)) continue;
+                var iniRel = Path.Combine(directory, group.Key.Replace('/', '\\'));
+                if (!view.TryResolve(iniRel, out var iniPath)) continue;
                 var raceIds = group.Select(entry => entry.Key)
                     .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -243,10 +278,10 @@ public static class MorphRegistry
         return results;
     }
 
-    private static Dictionary<string, string> ReadRaces(string directory)
+    private static Dictionary<string, string> ReadRaces(ResolvedDataView view, string directory)
     {
         var races = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var ini in Directory.EnumerateFiles(directory, "races.ini", SearchOption.TopDirectoryOnly))
+        foreach (var (_, ini) in view.Files(directory, "races.ini", recursive: false))
         {
             foreach (var line in ReadIniLines(ini))
             {

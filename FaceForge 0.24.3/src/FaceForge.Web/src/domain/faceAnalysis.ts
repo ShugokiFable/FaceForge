@@ -268,6 +268,39 @@ const measured = (key: MeasurementKey, label: string, value: number): Measuremen
   display: value.toFixed(3)
 });
 
+/**
+ * Nose projection measured from a LATERAL view: the signed perpendicular offset of the nose tip (1)
+ * from the facial axis (nasion 168 -> chin 152), normalized by face height. Front-on this is ~0 for
+ * everyone; on a profile it is how far the nose juts forward -- the depth the 39 front measurements
+ * cannot see. Measured directly on the raw (uncorrected) profile landmarks, since pose-correcting to
+ * front would flatten exactly the projection we want. Sign follows the turn direction, so left- and
+ * right-turned views come out opposite; magnitude is what a symmetric nose-forward reshape drives.
+ */
+export function noseProjection(
+  landmarks: readonly FaceLandmark[],
+  sourceAspectRatio = 1
+): number | null {
+  if (landmarks.length < 469) return null;
+  try {
+    const nasion = point(landmarks, 168);
+    const chin = point(landmarks, 152);
+    const tip = point(landmarks, 1);
+    const top = point(landmarks, 10);
+    const ax = nasion.x * sourceAspectRatio;
+    const ay = nasion.y;
+    const vx = chin.x * sourceAspectRatio - ax;
+    const vy = chin.y - ay;
+    const axisLength = Math.hypot(vx, vy);
+    const faceHeight = distance(top, chin, sourceAspectRatio);
+    if (axisLength < 1e-6 || faceHeight < 1e-6) return null;
+    const px = tip.x * sourceAspectRatio;
+    const py = tip.y;
+    return ((px - ax) * vy - (py - ay) * vx) / axisLength / faceHeight;
+  } catch {
+    return null;
+  }
+}
+
 export function measureFace(
   sourceLandmarks: readonly FaceLandmark[],
   blendshapes: Readonly<Record<string, number>> = {},

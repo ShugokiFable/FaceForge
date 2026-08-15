@@ -417,7 +417,7 @@ describe("face proportion mapping", () => {
 
   it("creates the full neutral EFM set for vision-only illustration fallback", () => {
     const names = Object.keys(sliderRecord(createNeutralEfmSliders()));
-    expect(names).toHaveLength(63);
+    expect(names).toHaveLength(64);
     expect(names.every((name) => name.startsWith("EFM_"))).toBe(true);
   });
 
@@ -516,7 +516,7 @@ describe("face proportion mapping", () => {
     const sourceOf = new Map(SLIDER_DEFINITIONS.map((item) => [item.name, item.source]));
     const calibrated = sliders.filter((slider) => !estimated.has(sourceOf.get(slider.name)!));
 
-    expect(calibrated.length).toBe(55);
+    expect(calibrated.length).toBe(56);
     for (const slider of calibrated) {
       expect(Math.abs(slider.value), `${slider.name} on the neutral head`).toBeLessThan(0.8);
     }

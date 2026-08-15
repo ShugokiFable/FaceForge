@@ -8,9 +8,9 @@
     <AssemblyTitle>FaceForge</AssemblyTitle>
     <Description>On-device photo-guided RaceMenu preset creator.</Description>
     <Company>FaceForge</Company>
-    <Version>0.24.3</Version>
-    <FileVersion>0.24.3.0</FileVersion>
-    <InformationalVersion>0.24.3</InformationalVersion>
+    <Version>0.24.15</Version>
+    <FileVersion>0.24.15.0</FileVersion>
+    <InformationalVersion>0.24.15</InformationalVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>

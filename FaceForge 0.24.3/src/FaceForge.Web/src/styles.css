@@ -1431,6 +1431,22 @@ input[type="range"] {
   line-height: 1.45;
 }
 
+.settings-hint {
+  display: block;
+  margin: 6px 0 2px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.settings-hint code {
+  font-size: 9.5px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: #1c2a30;
+  color: #a9c8d0;
+}
+
 .settings-toggle {
   cursor: pointer;
 }
@@ -1995,4 +2011,249 @@ input[type="range"] {
 
 .dependency-card.warning-card h3 {
   color: #f0a94a;
+}
+
+/* Match & improve pane (replaces the old read-only analysis pane) */
+.match-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.match-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.match-toolbar .primary-button {
+  flex: 0 0 auto;
+}
+
+.match-add {
+  cursor: pointer;
+}
+
+.match-score {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+.match-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.match-progress-bar {
+  height: 6px;
+  background: #1c2a30;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.match-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--cyan);
+  transition: width 0.25s ease;
+}
+
+.match-progress small,
+.match-view figcaption {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.match-notice {
+  padding: 8px 10px;
+  border-left: 2px solid var(--cyan);
+  background: #17252b;
+  color: #a9c8d0;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.match-assessment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid #24353c;
+  background: #14212633;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #a9c8d0;
+}
+
+.match-assessment-line strong {
+  color: var(--cyan);
+}
+
+.match-assessment-note {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.match-assessment-comments {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #a9c8d0;
+}
+
+.match-views {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.zoomable {
+  cursor: zoom-in;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+  padding: 24px;
+}
+
+.lightbox img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.reshape-controls {
+  margin-bottom: 12px;
+  border: 1px solid #26333b;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #10181d;
+}
+
+.reshape-controls summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.reshape-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 34px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.reshape-label em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 11px;
+}
+
+.reshape-val {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.match-profile-check {
+  margin-bottom: 12px;
+}
+
+.match-profile-check figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+
+.match-profile-check img {
+  width: 190px;
+  max-width: 60%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #10181d;
+  border: 1px solid #26333b;
+}
+
+.match-profile-check figcaption {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.match-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.match-pair figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.match-pair img,
+.match-render-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #10181d;
+  border: 1px solid #26333b;
+}
+
+.match-render-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.match-remove {
+  align-self: flex-start;
+  font-size: 10px;
 }
