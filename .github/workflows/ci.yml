@@ -17,12 +17,15 @@ jobs:
   dotnet:
     name: Build + run core tests (latest snapshot)
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Locate newest FaceForge snapshot directory
         id: snap
@@ -40,10 +43,8 @@ jobs:
           dotnet restore "${{ steps.snap.outputs.path }}/src/FaceForge.Core/FaceForge.Core.csproj" --nologo
           dotnet build "${{ steps.snap.outputs.path }}/src/FaceForge.Core/FaceForge.Core.csproj" -c Release --no-restore --nologo
 
-      - name: Run core test runner (console project)
-        run: dotnet run --project "${{ steps.snap.outputs.path }}/src/FaceForge.Core.Tests/FaceForge.Core.Tests.csproj" -c Release
-
-      - name: Restore + build FaceForge.Desktop (WPF)
+      - name: Web bundle + core tests + Desktop (build.ps1)
+        shell: pwsh
         run: |
-          dotnet restore "${{ steps.snap.outputs.path }}/src/FaceForge.Desktop/FaceForge.Desktop.csproj" --nologo
-          dotnet build "${{ steps.snap.outputs.path }}/src/FaceForge.Desktop/FaceForge.Desktop.csproj" -c Release --no-restore --nologo
+          # Desktop csproj requires Resources/FaceForge.WebBundle.zip from the snapshot's build.ps1.
+          pwsh -File "${{ steps.snap.outputs.path }}/build.ps1" -Configuration Release
