@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    name: Build + run core tests (latest snapshot)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Locate newest FaceForge snapshot directory
+        id: snap
+        shell: pwsh
+        run: |
+          $dir = Get-ChildItem -Directory -Filter "FaceForge *" |
+            Sort-Object { [version](($_.Name -replace '[^0-9.]', '').Trim('.')) } |
+            Select-Object -Last 1
+          if (-not $dir) { throw "No 'FaceForge <version>' directory found at repo root." }
+          Write-Host "Using snapshot: $($dir.Name)"
+          "path=$($dir.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Restore + build FaceForge.Core
+        run: |
+          dotnet restore "${{ steps.snap.outputs.path }}/src/FaceForge.Core/FaceForge.Core.csproj" --nologo
+          dotnet build "${{ steps.snap.outputs.path }}/src/FaceForge.Core/FaceForge.Core.csproj" -c Release --no-restore --nologo
+
+      - name: Run core test runner (console project)
+        run: dotnet run --project "${{ steps.snap.outputs.path }}/src/FaceForge.Core.Tests/FaceForge.Core.Tests.csproj" -c Release
+
+      - name: Restore + build FaceForge.Desktop (WPF)
+        run: |
+          dotnet restore "${{ steps.snap.outputs.path }}/src/FaceForge.Desktop/FaceForge.Desktop.csproj" --nologo
+          dotnet build "${{ steps.snap.outputs.path }}/src/FaceForge.Desktop/FaceForge.Desktop.csproj" -c Release --no-restore --nologo
